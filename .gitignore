@@ -1,0 +1,5 @@
+*.exe
+*.stackdump
+*.out
+run
+*.pyc
