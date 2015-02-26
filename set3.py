@@ -149,20 +149,19 @@ def cbc_oracle_attack():
 
 
 def char_val(char):
+    common_letters = 'etaoinshr'
     # weigh letters higher than special chars and digits
-    if char >= ord('a') and char <= ord('z'):
+    if chr(char) in common_letters:
+        return 5
+    elif char >= ord('a') and char <= ord('z') or chr(char) == ' ':
         return 3
-    elif char >= ord('A') and char <= ord('Z'):
-        return 2
-    elif char >= ord('0') and char <= ord('9'):
-        return 1
-    elif chr(char) in ' ,.!?:;':
+    elif char >= ord('A') and char <= ord('Z') or chr(char) in ',.':
         return 1
     else:
-        return 0
+        return -1
 
 
-def break_byte(byts):
+def get_key(byts):
     best_key, count = 0, 0
 
     for key_byte in range(0xFF+1):
@@ -177,10 +176,32 @@ def break_byte(byts):
             best_key = key_byte
             count = score
 
-    return chr(best_key ^ ord(byts[0]))
+    return chr(best_key)
 
 
-def break_fixed_nonce():
+def break_fixed_nonce2():
+    f = open('Data/20.txt')
+    key = util.gen_random_bytes(16)
+    ctxts = []
+
+    for line in f.readlines():
+        ptxt = line.decode('base64')
+        ctxts.append(aes_modes.AES_CTR(ptxt, key, 0))
+
+    keystream = ''
+    for i in range(min(map(len, ctxts))):
+        keystream += get_key([(c[i] if i < len(c) else '') for c in ctxts])
+
+    ptxt = ''
+    for ctxt in ctxts:
+        raw = [chr(ord(c) ^ ord(k)) for (c, k) in zip(ctxt, keystream)]
+        ptxt += ''.join(raw) + '\n'
+
+    f.close()
+    return ptxt[:-1]
+
+
+def break_fixed_nonce1():
     f = open('Data/19.txt')
     key = util.gen_random_bytes(16)
     ctxts = []
@@ -189,9 +210,14 @@ def break_fixed_nonce():
         ptxt = line.decode('base64')
         ctxts.append(aes_modes.AES_CTR(ptxt, key, 0))
 
-    ptxt1 = ''
-    for i in range(len(ctxts[0])):
-        ptxt1 += break_byte([(c[i] if i < len(c) else '') for c in ctxts])
+    keystream = ''
+    for i in range(max(map(len, ctxts))):
+        keystream += get_key([(c[i] if i < len(c) else '') for c in ctxts])
+
+    ptxt = ''
+    for ctxt in ctxts:
+        raw = [chr(ord(c) ^ ord(k)) for (c, k) in zip(ctxt, keystream)]
+        ptxt += ''.join(raw) + '\n'
 
     f.close()
-    return ptxt1
+    return ptxt[:-1]

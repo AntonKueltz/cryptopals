@@ -85,7 +85,10 @@ def s3():
     print '{}\n'.format(aes_modes.AES_CTR(s18.decode('base64'), k18, 0))
 
     print '19: Break fixed-nonce CTR mode using substitions'
-    print '{}\n'.format(set3.break_fixed_nonce())
+    print '{}\n'.format(set3.break_fixed_nonce1())
+
+    print '20: Break fixed-nonce CTR statistically'
+    print '{}\n'.format(set3.break_fixed_nonce2())
 
     print '21: Implement the MT19937 Mersenne Twister RNG'
     print '{}\n'.format(set3.prng_output())
