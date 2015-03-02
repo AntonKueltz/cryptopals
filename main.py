@@ -6,6 +6,7 @@ import padding
 import set1
 import set2
 import set3
+import set4
 import set5
 import util
 
@@ -101,7 +102,8 @@ def s3():
 
 
 def s4():
-    pass
+    print '28: Implement a SHA-1 keyed MAC'
+    print '{}\n'.format(set4.sha1mac())
 
 
 def s5():
@@ -120,4 +122,3 @@ if __name__ == "__main__":
     else:
         for s in sets:
             s()
-
