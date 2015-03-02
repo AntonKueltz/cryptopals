@@ -5,15 +5,10 @@ Author: Anton Kueltz
 
 
 class SHA1():
-    def __init__(self, m):
+    def __init__(self):
         self.BLOCKSIZE = 512 / 8
         self.MAX_MSG_LEN = 2**64 - 1
-        self.msg = m
         self.h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
-        self.hash = self.digest()
-
-    def __str__(self):
-        return hex(self.hash)[2:-1]
 
     @staticmethod
     def word(str32bit):
@@ -28,8 +23,8 @@ class SHA1():
 
         return w
 
-    def pad(self):
-        msglen = len(self.msg)
+    def pad(self, msg):
+        msglen = len(msg)
         msgbits = msglen * 8
         if msgbits > self.MAX_MSG_LEN:
             print 'Message exceeds limit of 2^64-1 bits'
@@ -46,14 +41,14 @@ class SHA1():
             padstring += chr(0x00)
 
         padstring += (8-len(hexlen)) * chr(0x00) + hexlen
-        self.msg += padstring
+        return msg + padstring
 
-    def digest(self):
-        self.pad()
-        blocks = len(self.msg) / self.BLOCKSIZE
+    def hash(self, msg):
+        padded = self.pad(msg)
+        blocks = len(padded) / self.BLOCKSIZE
 
         for block in range(blocks):
-            chunk = self.msg[block*self.BLOCKSIZE:(block+1)*self.BLOCKSIZE]
+            chunk = padded[block*self.BLOCKSIZE:(block+1)*self.BLOCKSIZE]
 
             w = map(SHA1.word, [chunk[i*4:(i+1)*4] for i in range(16)])
             for i in range(16, 80):
@@ -91,5 +86,8 @@ class SHA1():
             self.h[3] = (self.h[3] + d) & 0xFFFFFFFF
             self.h[4] = (self.h[4] + e) & 0xFFFFFFFF
 
-        return ((self.h[0] << 128) | (self.h[1] << 96) | (self.h[2] << 64) |
-                (self.h[3] << 32) | self.h[4])
+        hashed = ((self.h[0] << 128) | (self.h[1] << 96) | (self.h[2] << 64) |
+                  (self.h[3] << 32) | self.h[4])
+        self.h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
+
+        return hex(hashed)[2:-1]
