@@ -105,6 +105,9 @@ def s4():
     print '28: Implement a SHA-1 keyed MAC'
     print '{}\n'.format(set4.sha1mac())
 
+    print '29: Break a SHA-1 keyed MAC using length extension'
+    print '{}\n'.format(set4.length_extension())
+
 
 def s5():
     print '33: Implement Diffie-Hellman'

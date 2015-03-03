@@ -1,14 +1,13 @@
-'''
-Implementation of the Secure Hashing Algorithm (SHA1)
-Author: Anton Kueltz
-'''
-
-
 class SHA1():
-    def __init__(self):
+    def __init__(self, backdoored=False, backdoor=None):
         self.BLOCKSIZE = 512 / 8
         self.MAX_MSG_LEN = 2**64 - 1
         self.h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0]
+        self.backdoored = backdoored
+
+        if self.backdoored:
+            self.backdoor = backdoor
+            self.h = self.backdoor[:]
 
     @staticmethod
     def word(str32bit):
@@ -55,6 +54,9 @@ class SHA1():
                 neww = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16])
                 neww = ((neww << 1) | ((neww >> 31) & 0x1)) & 0xFFFFFFFF
                 w.append(neww)
+
+            if self.backdoored:
+                self.h = self.backdoor[:]
 
             [a, b, c, d, e] = self.h
 
