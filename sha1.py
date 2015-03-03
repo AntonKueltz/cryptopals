@@ -22,6 +22,14 @@ class SHA1():
 
         return w
 
+    @staticmethod
+    def rotateleft(int32bit, amt):
+        mask = 0
+        for i in range(amt):
+            mask |= 2**i
+        rotated = (int32bit << amt) | ((int32bit >> (32 - amt)) & mask)
+        return rotated & 0xFFFFFFFF
+
     def pad(self, msg):
         msglen = len(msg)
         msgbits = msglen * 8
@@ -52,7 +60,7 @@ class SHA1():
             w = map(SHA1.word, [chunk[i*4:(i+1)*4] for i in range(16)])
             for i in range(16, 80):
                 neww = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16])
-                neww = ((neww << 1) | ((neww >> 31) & 0x1)) & 0xFFFFFFFF
+                neww = SHA1.rotateleft(neww, 1)
                 w.append(neww)
 
             if self.backdoored:
@@ -74,19 +82,15 @@ class SHA1():
                     f = (b ^ c ^ d) & 0xFFFFFFFF
                     k = 0xCA62C1D6
 
-                tmp = ((a << 5) | ((a >> 27) & 0x1F)) & 0xFFFFFFFF
+                tmp = SHA1.rotateleft(a, 5)
                 tmp += (f + e + k + w[i]) & 0xFFFFFFFF
                 e = d
                 d = c
-                c = ((b << 30) | ((b >> 2) & 0x3FFFFFFF)) & 0xFFFFFFFF
+                c = SHA1.rotateleft(b, 30)
                 b = a
                 a = tmp
 
-            self.h[0] = (self.h[0] + a) & 0xFFFFFFFF
-            self.h[1] = (self.h[1] + b) & 0xFFFFFFFF
-            self.h[2] = (self.h[2] + c) & 0xFFFFFFFF
-            self.h[3] = (self.h[3] + d) & 0xFFFFFFFF
-            self.h[4] = (self.h[4] + e) & 0xFFFFFFFF
+            self.h = [(r+s) % 2**32 for r, s in zip(self.h, [a, b, c, d, e])]
 
         hashed = ((self.h[0] << 128) | (self.h[1] << 96) | (self.h[2] << 64) |
                   (self.h[3] << 32) | self.h[4])
