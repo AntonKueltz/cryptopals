@@ -61,11 +61,18 @@ def s2():
           'aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq' \
           'dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg' \
           'YnkK'
-    print '{}\n'.format(set2.break_ecb_simple(s12.decode('base64')))
+    print '{}\n'.format(set2.break_ecb(s12.decode('base64')))
 
     print '13: ECB cut-and-paste'
     s13 = 'hax0r@bar.' + padding.pkcs7('admin') + 'com'
     print '{}\n'.format(set2.cut_and_paste(s13))
+
+    print '14: Byte-at-a-time ECB decryption (Harder)'
+    s14 = 'Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg' \
+          'aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq' \
+          'dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg' \
+          'YnkK'
+    print '{}\n'.format(set2.break_ecb(s14.decode('base64'), harder=True))
 
     print '15: PKCS#7 padding validation'
     s15 = 'ICE ICE BABY' + chr(4) * 4
