@@ -109,6 +109,9 @@ def s3():
 
 
 def s4():
+    print '27: Recover the key from CBC with IV=Key'
+    print '{}\n'.format(set4.key_as_iv())
+
     print '28: Implement a SHA-1 keyed MAC'
     print '{}\n'.format(set4.sha1mac())
 

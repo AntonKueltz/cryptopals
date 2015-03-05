@@ -1,6 +1,42 @@
+from Crypto.Cipher import AES
+
+import aes_modes
 import mac
 import sha1
 import util
+
+
+class ASCIIError(Exception):
+    def __init__(self, ptxt):
+        self.msg = ptxt
+
+    def __str__(self):
+        return 'Malformed txt: {}'.format(self.msg)
+
+
+def check_ascii_compliant(msg):
+    for c in msg:
+        if ord(c) < 32:
+            raise ASCIIError(msg)
+
+
+def key_as_iv():
+    key = util.gen_random_bytes(16)
+    print 'The key is {}'.format(key.encode('hex'))
+    msg = 'Super secret message unfortunately encrypted in a bad manner'
+
+    ctxt = aes_modes.AES_CBC_encrypt(msg, key, key)
+    c1 = ctxt[:AES.block_size]
+    zeros = chr(0) * AES.block_size
+    ctxt = c1 + zeros + c1 + ctxt[3*AES.block_size:]
+
+    try:
+        return check_ascii_compliant(aes_modes.AES_CBC_decrypt(ctxt, key, key))
+    except ASCIIError as e:
+        start = len('Malformed txt: ')
+        ptxt = str(e)[start:]
+        p1, p3 = ptxt[:AES.block_size], ptxt[2*AES.block_size:3*AES.block_size]
+        return 'Recovered ' + util.xor(p1, p3).encode('hex')
 
 
 def length_extension():
