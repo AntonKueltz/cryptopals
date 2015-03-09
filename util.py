@@ -45,7 +45,7 @@ def hamming(s1, s2):
 def gen_random_bytes(byte_count):
     byts = ''
 
-    for _ in range(byte_count):
+    for _ in xrange(byte_count):
         byts += chr(randint(0, 127))
 
     return byts
@@ -87,3 +87,54 @@ def mod_exp(base, ex, mod):
         base = (base * base) % mod
 
     return result
+
+
+def gcd(a, b):
+    while b != 0:
+        t = b
+        b = a % b
+        a = t
+
+    return a
+
+
+def mod_inv(n, mod):
+    n = n % mod
+    t, newt = 0, 1
+    r, newr = mod, n
+
+    while newr != 0:
+        q = r / newr
+        tmp1, tmp2 = t, r
+
+        t = newt
+        newt = tmp1 - q * newt
+        r = newr
+        newr = tmp2 - q * newr
+
+    if r > 1:
+        return 0
+    elif t < 0:
+        return t + mod
+    else:
+        return t
+
+
+def cube_root(n):
+    bits = len(bin(n)[2:])
+    mn, mx = (2**(bits / 3)), (2**(bits / 3 + 1))
+    mid = (mx + mn) / 2
+    guess = mid**3
+
+    while guess != n:
+        if mn > mx or mn**3 > n or mx**3 < n:
+            return None
+        elif n > guess:
+            mn = mid
+        else:
+            mx = mid
+
+        mid = (mx + mn) / 2
+        guess = mid**3
+
+    return mid

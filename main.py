@@ -124,6 +124,12 @@ def s5():
     print '33: Implement Diffie-Hellman'
     print '{}\n'.format(set5.diffie_hellman())
 
+    print '39: Implement RSA'
+    print '{}\n'.format(set5.basic_rsa())
+
+    print '40: Implement an E=3 RSA Broadcast attack'
+    print '{}\n'.format(set5.rsa_broadcast())
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5]
 
