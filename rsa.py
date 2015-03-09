@@ -23,4 +23,4 @@ class RSA():
     def dec(self, c):
         m = util.mod_exp(c, self.d, self.n)
         s = hex(m).replace('0x', '').replace('L', '')
-        return s.decode('hex')
+        return ('0' if len(s) & 1 else '') + s.decode('hex')
