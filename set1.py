@@ -2,19 +2,23 @@ import aes_modes
 import oracle
 import util
 
+
 def break_single_byte(ctxt):
     freqs = []
 
     for key in range(0xFF + 1):
         chars = []
-        for c in ctxt: chars.append(chr(ord(c) ^ key))
+        for c in ctxt:
+            chars.append(chr(ord(c) ^ key))
         freqs.append(util.char_freq(chars))
 
     return freqs.index(max(freqs))
 
+
 def single_byte_cipher(ctxt):
     key = chr(break_single_byte(ctxt))
     return util.repeating_key_xor(ctxt, key)
+
 
 def detect_single_byte():
     f = open('Data/4.txt')
@@ -32,6 +36,7 @@ def detect_single_byte():
     f.close()
     return ptxt
 
+
 def best_key_lengths(data):
     avg_dist = []
 
@@ -48,6 +53,7 @@ def best_key_lengths(data):
 
     return sorted(avg_dist)[:3]
 
+
 def break_repeating_key():
     f = open('Data/6.txt')
     data = f.read().replace('\n', '').decode('base64')
@@ -58,7 +64,8 @@ def break_repeating_key():
     for _, keylen in keylens:
         key = ''
         blocks = [''] * keylen
-        for i, c in enumerate(data): blocks[i % keylen] += c
+        for i, c in enumerate(data):
+            blocks[i % keylen] += c
 
         for block in blocks:
             key += chr(break_single_byte(block))
@@ -73,12 +80,14 @@ def break_repeating_key():
     f.close()
     return ptxt
 
+
 def decrypt_AES_ECB():
     f = open('Data/7.txt')
     data = f.read().replace('\n', '').decode('base64')
     key = 'YELLOW SUBMARINE'
 
     return aes_modes.AES_ECB_decrypt(data, key)
+
 
 def detect_ECB():
     f = open('Data/8.txt')

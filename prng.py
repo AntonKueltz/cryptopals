@@ -6,7 +6,7 @@ class MersenneTwister():
 
         for i in range(1, 624):
             self.MT[i] = 0xFFFFFFFF & (1812433253 * (self.MT[i-1] ^
-                (self.MT[i-1] >> 30)) + i)
+                                       (self.MT[i-1] >> 30)) + i)
 
     def extract(self):
         if self.idx == 0:
@@ -24,7 +24,7 @@ class MersenneTwister():
     def generate(self):
         for i in range(624):
             y = (self.MT[i] & 0x80000000) + (self.MT[(i+1) % 624] &
-                0x7FFFFFFF)
+                                             0x7FFFFFFF)
             self.MT[i] = self.MT[(i+397) % 624] ^ (y >> 1)
 
             if y % 2:

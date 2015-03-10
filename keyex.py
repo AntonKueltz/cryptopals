@@ -1,6 +1,7 @@
-import random # TODO change later?
+import random  # TODO change later?
 
 import util
+
 
 class DiffieHellman():
     def __init__(self, p, g):
