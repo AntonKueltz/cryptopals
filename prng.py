@@ -33,6 +33,7 @@ class MersenneTwister():
 
 def mt_stream_cipher(txt, seed):
     out = ''
+    seed = seed & 0xFFFF
     mt = MersenneTwister(seed)
     keystream = mt.extract()
 

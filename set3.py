@@ -9,88 +9,6 @@ import prng
 import util
 
 
-def untemper(mt_out):
-    y = mt_out
-
-    tmp1 = y & 0xFFFFC000
-    tmp2 = (((y << 18) ^ y) >> 18) & 0xFFFFFFFF
-    y = tmp1 | tmp2
-
-    tmp1 = y & 0x7FFF
-    tmp2 = ((y << 15) & 4022730752) ^ y
-    y = tmp1 | tmp2
-
-    tmp1 = y & 0x7F
-    tmp2 = (((tmp1 << 7) & 2636928640) ^ y) & 0x3F80
-    tmp3 = (((tmp2 << 7) & 2636928640) ^ y) & 0x1FC000
-    tmp4 = (((tmp3 << 7) & 2636928640) ^ y) & 0xFE00000
-    tmp5 = (((tmp4 << 7) & 2636928640) ^ y) & 0xF0000000
-    y = tmp1 | tmp2 | tmp3 | tmp4 | tmp5
-
-    tmp1 = y & 0xFFE00000
-    tmp2 = (((y << 11) ^ y) & 0xFFE00000) >> 11
-    tmp3 = ((tmp2 >> 11) ^ y) & 0x3FF
-    y = tmp1 | tmp2 | tmp3
-
-    return y
-
-
-def clone_mt19937():
-    mt = prng.MersenneTwister(int(time.time()))
-    output = []
-
-    for _ in range(624):
-        output.append(mt.extract())
-
-    untempered = map(untemper, output)
-    clone = prng.MersenneTwister(0)
-    clone.MT = untempered
-    cloned_output = []
-
-    for _ in range(624):
-        cloned_output.append(clone.extract())
-        output.append(mt.extract())
-
-    equal = cloned_output == output[624:]
-    return 'Clone Successful' if equal else 'Clone Unsuccessful :('
-
-
-def crack_mt19937_seed(runlegit=False):
-    if runlegit:
-        low, high = 40, 100
-    else:
-        low, high = 1, 5
-
-    wait = random.randint(low, high)
-    time.sleep(wait)
-
-    seed = int(time.time())
-    print 'Seed is {}'.format(seed)
-    mt = prng.MersenneTwister(seed)
-
-    wait = random.randint(low, high)
-    time.sleep(wait)
-    observed_out = mt.extract()
-
-    guess = 0
-    guess_seed = int(time.time()) + 1
-
-    while guess != observed_out:
-        guess_seed -= 1
-        mt_ = prng.MersenneTwister(guess_seed)
-        guess = mt_.extract()
-
-    return guess_seed
-
-
-def prng_output():
-    mt = prng.MersenneTwister(0)
-    out = ''
-    for _ in range(5):
-        out += str(mt.extract()) + ' '
-    return out[:-1]
-
-
 def break_cbc(ctxt, key, iv):
     ptxt = ''
     prevblock = iv
@@ -145,7 +63,7 @@ def cbc_oracle_attack():
     ctxt = aes_modes.AES_CBC_encrypt(ptxt, key, iv)
     ptxt = break_cbc(ctxt, key, iv)
 
-    return ptxt
+    return padding.validate(ptxt)
 
 
 def char_val(char):
@@ -221,3 +139,99 @@ def break_fixed_nonce1():
 
     f.close()
     return ptxt[:-1]
+
+
+def prng_output():
+    mt = prng.MersenneTwister(0)
+    out = ''
+    for _ in range(5):
+        out += str(mt.extract()) + ' '
+    return out[:-1]
+
+
+def crack_mt19937_seed(runlegit=False, seed=int(time.time())):
+    if runlegit:
+        low, high = 40, 100
+    else:
+        low, high = 1, 5
+
+    wait = random.randint(low, high)
+    time.sleep(wait)
+
+    mt = prng.MersenneTwister(seed)
+
+    wait = random.randint(low, high)
+    time.sleep(wait)
+    observed_out = mt.extract()
+
+    guess = 0
+    guess_seed = int(time.time()) + 1
+
+    while guess != observed_out:
+        guess_seed -= 1
+        mt_ = prng.MersenneTwister(guess_seed)
+        guess = mt_.extract()
+
+    assert(seed == guess_seed)
+    return guess_seed
+
+
+def untemper(mt_out):
+    y = mt_out
+
+    tmp1 = y & 0xFFFFC000
+    tmp2 = (((y << 18) ^ y) >> 18) & 0xFFFFFFFF
+    y = tmp1 | tmp2
+
+    tmp1 = y & 0x7FFF
+    tmp2 = ((y << 15) & 4022730752) ^ y
+    y = tmp1 | tmp2
+
+    tmp1 = y & 0x7F
+    tmp2 = (((tmp1 << 7) & 2636928640) ^ y) & 0x3F80
+    tmp3 = (((tmp2 << 7) & 2636928640) ^ y) & 0x1FC000
+    tmp4 = (((tmp3 << 7) & 2636928640) ^ y) & 0xFE00000
+    tmp5 = (((tmp4 << 7) & 2636928640) ^ y) & 0xF0000000
+    y = tmp1 | tmp2 | tmp3 | tmp4 | tmp5
+
+    tmp1 = y & 0xFFE00000
+    tmp2 = (((y << 11) ^ y) & 0xFFE00000) >> 11
+    tmp3 = ((tmp2 >> 11) ^ y) & 0x3FF
+    y = tmp1 | tmp2 | tmp3
+
+    return y
+
+
+def clone_mt19937():
+    mt = prng.MersenneTwister(int(time.time()))
+    output = []
+
+    for _ in range(624):
+        output.append(mt.extract())
+
+    untempered = map(untemper, output)
+    clone = prng.MersenneTwister(0)
+    clone.MT = untempered
+    cloned_output = []
+
+    for _ in range(624):
+        cloned_output.append(clone.extract())
+        output.append(mt.extract())
+
+    equal = cloned_output == output[624:]
+    return 'Clone Successful' if equal else 'Clone Unsuccessful :('
+
+
+def break_mt19937_stream():
+    known = 'A' * 14
+    prefix = util.gen_random_bytes(random.randint(1, 10))
+    seed = random.randint(0, 0xFFFF)
+    ctxt = prng.mt_stream_cipher(prefix + known, seed)
+
+    for guess_seed in range(0, 0xFFFF+1):
+        ptxt = prng.mt_stream_cipher(ctxt, guess_seed)
+        if known in ptxt:
+            break
+
+    equal = guess_seed == seed
+    return 'Successfully Broke Cipher' if equal else 'Could Not Break Cipher'

@@ -108,6 +108,9 @@ def s3():
     print '23: Clone an MT19937 RNG from its output'
     print '{}\n'.format(set3.clone_mt19937())
 
+    print '24: Create the MT19937 stream cipher and break it'
+    print '{}\n'.format(set3.break_mt19937_stream()) 
+
 
 def s4():
     print '27: Recover the key from CBC with IV=Key'
