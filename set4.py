@@ -1,3 +1,5 @@
+import random
+
 from Crypto.Cipher import AES
 
 import aes_modes
@@ -12,6 +14,62 @@ class ASCIIError(Exception):
 
     def __str__(self):
         return 'Malformed txt: {}'.format(self.msg)
+
+
+def edit_ctxt(ctxt, key, nonce, offset, newtext):
+    byts = len(newtext)
+    start_block = offset / AES.block_size
+    end_block = (offset + byts - 1) / AES.block_size
+
+    cipher = AES.new(key, AES.MODE_ECB)
+    keybytes = ''
+
+    for block in range(start_block, end_block+1):
+        intxt = aes_modes.format_64bit(nonce) + aes_modes.format_64bit(block)
+        keybytes += cipher.encrypt(intxt)
+
+    keyoffset = offset % AES.block_size
+    keybytes = keybytes[keyoffset:keyoffset + byts]
+    edited_ctxt = util.xor(newtext, keybytes)
+
+    return ctxt[:offset] + edited_ctxt + ctxt[offset+byts:]
+
+
+def read_write_CTR():
+    f = open('Data/25.txt')
+    data = f.read().replace('\n', '').decode('base64')
+    key = 'YELLOW SUBMARINE'
+    ptxt = aes_modes.AES_ECB_decrypt(data, key)
+
+    key, nonce = util.gen_random_bytes(16), random.randint(0, 2**32-1)
+    ctxt = aes_modes.AES_CTR(ptxt, key, nonce)
+
+    newtext = 'A' * len(ctxt)
+    edited = edit_ctxt(ctxt, key, nonce, 0, newtext)
+    return util.xor(util.xor(edited, ctxt), newtext)
+
+
+def bitflip(ctxt, instr):
+    inject = 'dataz;admin=true'
+    targetblock = ctxt[(2*AES.block_size):(3*AES.block_size)]
+    keybytes = util.xor(instr, targetblock)
+
+    badblock = util.xor(inject, keybytes)
+    start = ctxt[:(2*AES.block_size)]
+    end = ctxt[(3*AES.block_size):]
+    return start + badblock + end
+
+
+def bitflipping_CTR(instr):
+    s1 = 'comment1=cooking%20MCs;userdata='
+    s2 = ';comment2=%20like%20a%20pound%20of%20bacon'
+    ptxt = s1 + instr.replace(';', '').replace('=', '') + s2
+    key, nonce = util.gen_random_bytes(16), random.randint(0, 2**32-1)
+
+    ctxt = aes_modes.AES_CTR(ptxt, key, nonce)
+    ctxtmod = bitflip(ctxt, instr)
+    ptxtmod = aes_modes.AES_CTR(ctxtmod, key, nonce)
+    return ptxtmod
 
 
 def check_ascii_compliant(msg):

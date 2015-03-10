@@ -109,10 +109,16 @@ def s3():
     print '{}\n'.format(set3.clone_mt19937())
 
     print '24: Create the MT19937 stream cipher and break it'
-    print '{}\n'.format(set3.break_mt19937_stream()) 
+    print '{}\n'.format(set3.break_mt19937_stream())
 
 
 def s4():
+    print '25: Break "random access read/write" AES CTR'
+    print '{}\n'.format(set4.read_write_CTR())
+
+    print '26: CTR bitflipping'
+    print '{}\n'.format(set4.bitflipping_CTR('A' * 16))
+
     print '27: Recover the key from CBC with IV=Key'
     print '{}\n'.format(set4.key_as_iv())
 
