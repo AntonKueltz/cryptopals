@@ -1,6 +1,9 @@
+import time
+
 import aes_modes
 import oracle
 import padding
+import prng
 import set1
 import set2
 import set3
@@ -27,6 +30,32 @@ vanilla_ice_3 = 'Rollin\' in my 5.0\n'\
                 'With my rag-top down so my hair can blow\n'\
                 'The girlies on standby waving just to say hi\n'\
                 'Did you stop? No, I just drove by\n'\
+
+vanilla_ice_4 = 'i\'m rated \"R\"...this is a warning, ya better void / P\n'\
+                'cuz I came back to attack others in spite- / Strike l\n'\
+                'but don\'t be afraid in the dark, in a park / Not a sc\n'\
+                'ya tremble like a alcoholic, muscles tighten up / Wha\n'
+
+vanilla_set = map(lambda x: x.decode('base64'), [
+                'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
+                'MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgY'
+                'XJlIHB1bXBpbic=',
+                'MDAwMDAyUXVpY2sgdG8gdGhlIHBvaW50LCB0byB0aGUgcG9pbnQsIG5vIGZha'
+                '2luZw==',
+                'MDAwMDAzQ29va2luZyBNQydzIGxpa2UgYSBwb3VuZCBvZiBiYWNvbg==',
+                'MDAwMDA0QnVybmluZyAnZW0sIGlmIHlvdSBhaW4ndCBxdWljayBhbmQgbmltYm'
+                'xl',
+                'MDAwMDA1SSBnbyBjcmF6eSB3aGVuIEkgaGVhciBhIGN5bWJhbA==',
+                'MDAwMDA2QW5kIGEgaGlnaCBoYXQgd2l0aCBhIHNvdXBlZCB1cCB0ZW1wbw==',
+                'MDAwMDA3SSdtIG9uIGEgcm9sbCwgaXQncyB0aW1lIHRvIGdvIHNvbG8=',
+                'MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=',
+                'MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93'
+            ])
+
+easter_start = 'i have met them at close of day\n'\
+               'coming with vivid faces\n'\
+               'from counter or desk among grey\n'\
+               'eighteenth-century houses.\n'
 
 
 # matching the start of the lyrics is generally good enough to verify
@@ -143,3 +172,30 @@ def testall():
     e = ';admin=true;'
     r = set2.bitflipping('A' * 16)
     print u'16: {}'.format(retstr(e in r))
+
+    e = vanilla_set
+    r = set3.cbc_oracle_attack()
+    print u'17: {}'.format(retstr(r in e))
+
+    i18 = 'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoO' \
+          'LSFQ=='
+    k18 = 'YELLOW SUBMARINE'
+    e = 'Yo, VIP Let\'s kick it Ice, Ice, baby Ice, Ice, baby '
+    r = aes_modes.AES_CTR(i18.decode('base64'), k18, 0)
+    print u'18: {}'.format(retstr(e == r))
+
+    e = easter_start
+    r = set3.break_fixed_nonce1()
+    print u'19: {}'.format(retstr(match_start(e, r)))
+
+    e = vanilla_ice_4
+    r = set3.break_fixed_nonce2()
+    print u'20: {}'.format(retstr(match_start(e, r)))
+
+    e = '2357136044 2546248239 3071714933 3626093760 2588848963'
+    r = set3.prng_output()
+    print u'21: {}'.format(retstr(e == r))
+
+    e = int(time.time())
+    r = set3.crack_mt19937_seed(False, e)
+    print u'22: {}'.format(retstr(e == r))

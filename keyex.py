@@ -10,7 +10,7 @@ class DiffieHellman():
         self.shared = None
 
     def getA(self):
-        return util.mod_exp(self.g, self.secret, self.p) 
+        return util.mod_exp(self.g, self.secret, self.p)
 
     def computeShared(self, B):
         aB = util.mod_exp(B, self.secret, self.p)
