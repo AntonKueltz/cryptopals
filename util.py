@@ -120,14 +120,14 @@ def mod_inv(n, mod):
         return t
 
 
-def cube_root(n):
+def kth_root(n, k):
     bits = len(bin(n)[2:])
-    mn, mx = (2**(bits / 3)), (2**(bits / 3 + 1))
+    mn, mx = (2**(bits / k)), (2**(bits / k + 1))
     mid = (mx + mn) / 2
-    guess = mid**3
+    guess = mid**k
 
     while guess != n:
-        if mn > mx or mn**3 > n or mx**3 < n:
+        if mn > mx or mn**k > n or mx**k < n:
             return None
         elif n > guess:
             mn = mid
@@ -135,6 +135,6 @@ def cube_root(n):
             mx = mid
 
         mid = (mx + mn) / 2
-        guess = mid**3
+        guess = mid**k
 
     return mid

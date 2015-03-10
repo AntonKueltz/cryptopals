@@ -53,5 +53,5 @@ def rsa_broadcast():
     t2 = (c2 * m2 * util.mod_inv(m2, n2))
     c = (t0 + t1 + t2) % (n0*n1*n2)
 
-    raw = hex(util.cube_root(c))[2:-1]
+    raw = hex(util.kth_root(c, 3))[2:-1]
     return (('0' if len(raw) & 1 else '') + raw).decode('hex')
