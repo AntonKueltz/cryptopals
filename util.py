@@ -5,6 +5,12 @@ def hex_to_base64(hex):
     return hex.decode('hex').encode('base64')
 
 
+def int_to_ascii(i):
+    s = hex(i).replace('0x', '').replace('L', '')
+    evenlen = ('0' if len(s) & 1 else '') + s
+    return evenlen.decode('hex')
+
+
 def xor(buf1, buf2):
     result = ""
     for b1, b2 in zip(buf1, buf2):
