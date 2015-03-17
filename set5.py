@@ -54,5 +54,3 @@ def rsa_broadcast():
     c = (t0 + t1 + t2) % (n0*n1*n2)
 
     return util.int_to_ascii(util.kth_root(c, 3))
-    # raw = hex(util.kth_root(c, 3))[2:-1]
-    # return (('0' if len(raw) & 1 else '') + raw).decode('hex')
