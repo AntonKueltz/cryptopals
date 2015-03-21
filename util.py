@@ -11,6 +11,11 @@ def int_to_ascii(i):
     return evenlen.decode('hex')
 
 
+def int_to_hexstr(i):
+    s = hex(i).replace('0x', '').replace('L', '')
+    return ('0' if len(s) & 1 else '') + s
+
+
 def xor(buf1, buf2):
     result = ""
     for b1, b2 in zip(buf1, buf2):

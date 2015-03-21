@@ -128,6 +128,9 @@ def s4():
     print '29: Break a SHA-1 keyed MAC using length extension'
     print '{}\n'.format(set4.length_extension())
 
+    print '31: Implement and break HMAC-SHA1 with an artificial timing leak'
+    print '{}\n'.format(set4.hmac_sha1_timing_leak())
+
 
 def s5():
     print '33: Implement Diffie-Hellman'

@@ -1,9 +1,12 @@
 import random
+import requests
+import time
 
 from Crypto.Cipher import AES
 
 import aes_modes
 import mac
+import server
 import sha1
 import util
 
@@ -159,3 +162,31 @@ def sha1mac():
         return 'All Tests Passed!'
     else:
         return 'Not All Tests Passed :('
+
+
+def hmac_sha1_timing_leak(file):
+    key = 'YELLOW SUBMARINE'
+    expected = mac.hmac_sha1(key, file)
+    known = ''
+
+    while len(known) < len(expected):
+        unknown = (len(expected) - len(known) - 2) * '0'
+        longest, best = 0.0, ''
+
+        for byt in range(0, 0xFF+1):
+            sig = known + util.int_to_hexstr(byt) + unknown
+            url = 'http://0.0.0.0:8080/hmac?file={}&sig={}'.format(file, sig)
+
+            start = time.time()
+            req = requests.post(url)
+            end = time.time()
+
+            runtime = end - start
+            if runtime > longest:
+                longest = runtime
+                best = util.int_to_hexstr(byt)
+
+        known += best
+
+    equal = known == expected
+    return 'HMAC Successfully Broken!' if equal else 'HMAC Was Not Broken :('
