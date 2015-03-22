@@ -129,7 +129,14 @@ def s4():
     print '{}\n'.format(set4.length_extension())
 
     print '31: Implement and break HMAC-SHA1 with an artificial timing leak'
-    print '{}\n'.format(set4.hmac_sha1_timing_leak())
+    s31 = 'filename'
+    i31 = 50
+    print '{}\n'.format(set4.hmac_sha1_timing_leak(s31, i31))
+
+    print '32: Break HMAC-SHA1 with a slightly less artificial timing leak'
+    s32 = 'anotherfilename'
+    i32 = 5
+    print '{}\n'.format(set4.hmac_sha1_timing_leak(s32, i32))
 
 
 def s5():

@@ -164,18 +164,21 @@ def sha1mac():
         return 'Not All Tests Passed :('
 
 
-def hmac_sha1_timing_leak(file):
+def hmac_sha1_timing_leak(file, stime):
     key = 'YELLOW SUBMARINE'
     expected = mac.hmac_sha1(key, file)
     known = ''
+    print 'Expected: {}'.format(expected)
 
     while len(known) < len(expected):
+        print known
         unknown = (len(expected) - len(known) - 2) * '0'
         longest, best = 0.0, ''
 
         for byt in range(0, 0xFF+1):
             sig = known + util.int_to_hexstr(byt) + unknown
-            url = 'http://0.0.0.0:8080/hmac?file={}&sig={}'.format(file, sig)
+            url = 'http://0.0.0.0:8080/hmac?file={}&sig={}&stime={}'.format(
+                file, sig, stime)
 
             start = time.time()
             req = requests.post(url)
