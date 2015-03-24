@@ -12,3 +12,18 @@ A note on Set 4: To run set 4 (specifically the last two challenges) you need to
 
 [requests](http://docs.python-requests.org/en/latest/) (pip install requests)
 
+## progress
+Set 1 ✓ [8/8 complete]
+
+Set 2 ✓ [8/8 complete]
+
+Set 3 ✓ [8/8 complete]
+
+Set 4 ✗ [7/8 complete]
+
+Set 5 ✗ [3/8 complete]
+
+Set 6 ✗ [0/8 complete]
+
+Set 7 ✗ [0/8 complete]
+
