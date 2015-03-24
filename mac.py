@@ -1,4 +1,4 @@
-import sha1
+import hash_funcs
 
 
 class MACError(Exception):
@@ -7,13 +7,19 @@ class MACError(Exception):
 
 
 def sha1mac(key, msg):
-    sha = sha1.SHA1()
+    sha = hash_funcs.SHA1()
     mac = sha.hash(key + msg)
     return mac
 
 
-def authenticate(key, msg, mac):
-    sha = sha1.SHA1()
+def md4mac(key, msg):
+    md4 = hash_funcs.MD4()
+    mac = md4.hash(key + msg)
+    return mac
+
+
+def authenticate_sha1(key, msg, mac):
+    sha = hash_funcs.SHA1()
     computedmac = sha.hash(key + msg)
 
     if computedmac != mac:
@@ -22,8 +28,18 @@ def authenticate(key, msg, mac):
     return True
 
 
+def authenticate_md4(key, msg, mac):
+    md4 = hash_funcs.MD4()
+    computedmac = md4.hash(key + msg)
+
+    if computedmac != mac:
+        raise MACError()
+
+    return True
+
+
 def hmac_sha1(key, msg):
-    s = sha1.SHA1()
+    s = hash_funcs.SHA1()
 
     if len(key) > s.BLOCKSIZE:
         key = s.hash(key)

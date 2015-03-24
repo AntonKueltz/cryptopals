@@ -7,7 +7,7 @@ from Crypto.Cipher import AES
 import aes_modes
 import mac
 import server
-import sha1
+import hash_funcs
 import util
 
 
@@ -100,37 +100,6 @@ def key_as_iv():
         return 'Recovered ' + util.xor(p1, p3).encode('hex')
 
 
-def length_extension():
-    msg = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound' \
-          '%20of%20bacon'
-    key = util.gen_random_bytes(16)
-    auth = mac.sha1mac(key, msg)
-
-    msglen = len(msg) + len(key)
-    dummy = chr(0x00) * msglen
-    s = sha1.SHA1()
-    glue = s.pad(dummy)[msglen:]
-
-    hs = []
-    authval = int(auth, 16)
-    while authval:
-        hs = [int(authval & 0xFFFFFFFF)] + hs
-        authval = authval >> 32
-
-    inject = ';admin=true'
-    tampered = sha1.SHA1(backdoored=True, backdoor=hs)
-    forged = tampered.hash(dummy + glue + inject)
-
-    try:
-        if mac.authenticate(key, msg + glue + inject, forged):
-            return 'Successfully Forged Message!\n' \
-                   'Message: {}\nMAC: {}'.format(msg + glue + inject, forged)
-        else:
-            return 'Message Forgery Failed'
-    except:
-        return 'Message Forgery Failed'
-
-
 def sha1mac():
     msg = 'Some super secret thing I dont want to share'
     key = util.gen_random_bytes(16)
@@ -138,21 +107,21 @@ def sha1mac():
     testpassed = 0
 
     try:
-        assert(mac.authenticate(key, msg, auth) == True)
+        assert(mac.authenticate_sha1(key, msg, auth) == True)
         testpassed += 1
         print 'Correct MAC accepted'
     except:
         print 'Correct MAC erroneously rejected'
     try:
         badauth = mac.sha1mac(util.gen_random_bytes(16), msg)
-        assert(mac.authenticate(key, msg, badauth) == True)
+        assert(mac.authenticate_sha1(key, msg, badauth) == True)
         print 'Tampered MAC erroneously accepted'
     except:
         testpassed += 1
         print 'Tampered MAC rejected'
     try:
         badmsg = 'I didnt write this'
-        assert(mac.authenticate(key, badmsg, auth) == True)
+        assert(mac.authenticate_sha1(key, badmsg, auth) == True)
         print 'Tampered message erroneously accepted'
     except:
         testpassed += 1
@@ -162,6 +131,68 @@ def sha1mac():
         return 'All Tests Passed!'
     else:
         return 'Not All Tests Passed :('
+
+
+def length_extension_sha1():
+    msg = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound' \
+          '%20of%20bacon'
+    key = util.gen_random_bytes(16)
+    auth = mac.sha1mac(key, msg)
+
+    msglen = len(msg) + len(key)
+    dummy = chr(0x00) * msglen
+    s = hash_funcs.SHA1()
+    glue = s.pad(dummy)[msglen:]
+
+    hs = []
+    authval = int(auth, 16)
+    while authval:
+        hs = [int(authval & 0xFFFFFFFF)] + hs
+        authval = authval >> 32
+
+    inject = ';admin=true'
+    tampered = hash_funcs.SHA1(backdoored=True, backdoor=hs)
+    forged = tampered.hash(dummy + glue + inject)
+
+    try:
+        if mac.authenticate_sha1(key, msg + glue + inject, forged):
+            return 'Successfully Forged Message!\n' \
+                   'Message: {}\nMAC: {}'.format(msg + glue + inject, forged)
+        else:
+            return 'Message Forgery Failed'
+    except:
+        return 'Message Forgery Failed'
+
+
+def length_extension_md4():
+    msg = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound' \
+          '%20of%20bacon'
+    key = util.gen_random_bytes(16)
+    auth = mac.md4mac(key, msg)
+
+    msglen = len(msg) + len(key)
+    dummy = chr(0x00) * msglen
+    m = hash_funcs.MD4()
+    glue = m.pad(dummy)[msglen:]
+
+    hs = []
+    authval = int(auth, 16)
+    while authval:
+        hs = [int(authval & 0xFFFFFFFF)] + hs
+        authval = authval >> 32
+
+    inject = ';admin=true'
+    tampered = hash_funcs.MD4(backdoored=True, backdoor=hs)
+    forged = tampered.hash(dummy + glue + inject)
+
+    try:
+        if mac.authenticate_md4(key, msg + glue + inject, forged):
+            return 'Successfully Forged Message!\n' \
+                   'Message: {}\nMAC: {}'.format(msg + glue + inject, forged)
+        else:
+            return 'Message Forgery Failed'
+    except:
+        return 'Message Forgery Failed'
 
 
 def hmac_sha1_timing_leak(file, stime):

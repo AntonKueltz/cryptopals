@@ -126,7 +126,10 @@ def s4():
     print '{}\n'.format(set4.sha1mac())
 
     print '29: Break a SHA-1 keyed MAC using length extension'
-    print '{}\n'.format(set4.length_extension())
+    print '{}\n'.format(set4.length_extension_sha1())
+
+    print '30: Break an MD4 keyed MAC using length extension'
+    print '{}\n'.format(set4.length_extension_md4())
 
     print '31: Implement and break HMAC-SHA1 with an artificial timing leak'
     s31 = 'filename'
