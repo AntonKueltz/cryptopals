@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys
 
 import aes_modes
@@ -133,13 +133,11 @@ def s4():
 
     print '31: Implement and break HMAC-SHA1 with an artificial timing leak'
     s31 = 'filename'
-    i31 = 50
-    print '{}\n'.format(set4.hmac_sha1_timing_leak(s31, i31))
+    print '{}\n'.format(set4.hmac_sha1_timing_leak(s31, 50, 1))
 
     print '32: Break HMAC-SHA1 with a slightly less artificial timing leak'
     s32 = 'anotherfilename'
-    i32 = 5
-    print '{}\n'.format(set4.hmac_sha1_timing_leak(s32, i32))
+    print '{}\n'.format(set4.hmac_sha1_timing_leak(s32, 5, 10))
 
 
 def s5():

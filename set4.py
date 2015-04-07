@@ -195,7 +195,7 @@ def length_extension_md4():
         return 'Message Forgery Failed'
 
 
-def hmac_sha1_timing_leak(file, stime):
+def hmac_sha1_timing_leak(file, stime, rounds):
     key = 'YELLOW SUBMARINE'
     expected = mac.hmac_sha1(key, file)
     known = ''
@@ -206,18 +206,22 @@ def hmac_sha1_timing_leak(file, stime):
         unknown = (len(expected) - len(known) - 2) * '0'
         longest, best = 0.0, ''
 
-        for byt in range(0, 0xFF+1):
-            sig = known + util.int_to_hexstr(byt) + unknown
-            url = 'http://0.0.0.0:8080/hmac?file={}&sig={}&stime={}'.format(
-                file, sig, stime)
+        for byt in range(0xFF+1):
+            total = 0.0
 
-            start = time.time()
-            req = requests.post(url)
-            end = time.time()
+            for _ in range(rounds):
+                sig = known + util.int_to_hexstr(byt) + unknown
+                url = 'http://0.0.0.0:8080/hmac?file={}&sig={}&stime={}'.format(
+                    file, sig, stime)
 
-            runtime = end - start
-            if runtime > longest:
-                longest = runtime
+                start = time.time()
+                requests.post(url)
+                end = time.time()
+                total += (end-start)
+
+            avg_runtime = total / rounds
+            if avg_runtime > longest:
+                longest = avg_runtime
                 best = util.int_to_hexstr(byt)
 
         known += best
