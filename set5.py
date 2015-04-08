@@ -112,7 +112,7 @@ def secure_remote_password():
     server.set_client(client)
 
     client.initiate()
-    return 'Login ' + 'Success' if client.check_hmac() else 'Failure'
+    return 'Login ' + 'Success' if server.check_hmac() else 'Failure'
 
 
 def srp_w_zerokey():
@@ -138,7 +138,7 @@ def srp_w_zerokey():
         server.set_client(client)
 
         client.initiate()
-        status = 'Success' if client.check_hmac() else 'Failure'
+        status = 'Success' if server.check_hmac() else 'Failure'
         retstr += 'Login ' + status + ' [A={}]\n'.format(Astr[i])
 
     return retstr[:-1]

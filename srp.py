@@ -54,12 +54,8 @@ class Client(object):
         else:
             self.K = hashlib.sha256(str(S)).hexdigest()
 
-    def check_hmac(self):
-        hmac_sha256 = hmac.new(self.K, str(self.salt), hashlib.sha256)
-        client_hmac = hmac_sha256.hexdigest()
-        server_hmac = self.server.get_hmac()
-        return hmac.compare_digest(client_hmac, server_hmac)
-
+    def get_hmac(self):
+        return hmac.new(self.K, str(self.salt), hashlib.sha256).hexdigest()
 
 class Server(object):
     def __init__(self, email, password):
@@ -100,5 +96,8 @@ class Server(object):
         S = util.mod_exp(base, self.b, self.N)
         self.K = hashlib.sha256(str(S)).hexdigest()
 
-    def get_hmac(self):
-        return hmac.new(self.K, str(self.salt), hashlib.sha256).hexdigest()
+    def check_hmac(self):
+        hmac_sha256 = hmac.new(self.K, str(self.salt), hashlib.sha256)
+        server_hmac = hmac_sha256.hexdigest()
+        client_hmac = self.client.get_hmac()
+        return hmac.compare_digest(client_hmac, server_hmac)
