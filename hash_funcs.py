@@ -60,6 +60,12 @@ class SHA1(MerkleDamgardHash):
             return super(SHA1, self).pad(msg)
 
     def hash(self, msg):
+        try:
+            msg = str(msg)
+        except:
+            print 'Unhashable input!'
+            return None
+
         padded = self.pad(msg)
         blocks = len(padded) / self.BLOCKSIZE
 
@@ -154,6 +160,12 @@ class MD4(MerkleDamgardHash):
         self.h[a] = self.rotateleft(tmp, s)
 
     def hash(self, msg):
+        try:
+            msg = str(msg)
+        except:
+            print 'Unhashable input!'
+            return None
+
         padded = self.pad(msg)
         blocks = len(padded) / self.BLOCKSIZE
 

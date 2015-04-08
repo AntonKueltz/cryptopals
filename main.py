@@ -144,6 +144,14 @@ def s5():
     print '33: Implement Diffie-Hellman'
     print '{}\n'.format(set5.diffie_hellman())
 
+    print '34: Implement a MITM key-fixing attack on Diffie-Hellman with ' \
+          'parameter injection'
+    print '{}\n'.format(set5.dh_param_injection())
+
+    print '35: Implement DH with negotiated groups, and break with malicious ' \
+          '"g" parameters'
+    print '{}\n'.format(set5.dh_malicious_group())
+
     print '39: Implement RSA'
     print '{}\n'.format(set5.basic_rsa())
 
