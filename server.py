@@ -3,10 +3,19 @@ import time
 import web
 
 import mac
+import srp
 import util
 
-urls = ('/', 'index', '/hmac', 'hmac')
+render = web.template.render('html/')
+
+urls = ('/', 'index', '/hmac', 'hmac', '/login', 'login')
 key = None
+
+login_form = web.form.Form(
+    web.form.Textbox('email'),
+    web.form.Password('password'),
+    web.form.Button('Login'),
+)
 
 
 def start_server():
@@ -43,6 +52,26 @@ class hmac():
             time.sleep(stime / 1000.0)
 
         return True
+
+
+class login():
+    def GET(self):
+        form = login_form()
+        return render.login(form)
+
+    def POST(self):
+        form = login_form()
+        if not form.validates():
+            return render.login(form)
+        else:
+            clientlogic = srp.Client('foo@bar.com', 'password', tampered=True)
+            serverlogic = srp.Server(form.d.email, form.d.password)
+
+            clientlogic.set_server(serverlogic)
+            serverlogic.set_client(clientlogic)
+            clientlogic.initiate()
+
+            return 'Success' if clientlogic.check_hmac() else 'Failure'
 
 if __name__ == '__main__':
     start_server()

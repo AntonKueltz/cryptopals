@@ -104,7 +104,7 @@ def dh_malicious_group():
 
 def secure_remote_password():
     email = 'foo@bar.com'
-    password = '1337h@X0r'
+    password = 'password'
 
     client = srp.Client(email, password)
     server = srp.Server(email, password)
@@ -112,7 +112,36 @@ def secure_remote_password():
     server.set_client(client)
 
     client.initiate()
-    return '200 OK' if client.check_hmac() else '500 INTERNAL SERVER ERROR'
+    return 'Login ' + 'Success' if client.check_hmac() else 'Failure'
+
+
+def srp_w_zerokey():
+    email = 'foo@bar.com'
+    password = 'password'
+    N = int(
+        'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024'
+        'e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd'
+        '3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec'
+        '6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f'
+        '24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361'
+        'c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552'
+        'bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff'
+        'fffffffffffff', 16
+    )
+    retstr = ''
+
+    for i, badA in enumerate([0, N, N*2]):
+        Astr = ['0', 'N', 'N*2']
+        client = srp.Client(email, password, tampered=True, A=badA)
+        server = srp.Server(email, 'wrongpassword')
+        client.set_server(server)
+        server.set_client(client)
+
+        client.initiate()
+        status = 'Success' if client.check_hmac() else 'Failure'
+        retstr += 'Login ' + status + ' [A={}]\n'.format(Astr[i])
+
+    return retstr[:-1]
 
 
 def basic_rsa():

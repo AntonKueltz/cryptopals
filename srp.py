@@ -7,7 +7,7 @@ import util
 
 
 class Client(object):
-    def __init__(self, email, password):
+    def __init__(self, email, password, tampered=False, A=None):
         self.N = int(
             'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024'
             'e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd'
@@ -22,13 +22,20 @@ class Client(object):
         self.k = 3
         self.I = email
         self.P = password
+        self.tampered = tampered
+        self.badA = A
 
     def set_server(self, server):
         self.server = server
 
     def initiate(self):
         self.a = random.randint(0, self.N-1)
-        self.A = util.mod_exp(self.g, self.a, self.N)
+
+        if self.tampered:
+            self.A = self.badA
+        else:
+            self.A = util.mod_exp(self.g, self.a, self.N)
+
         self.server.get_A(self.I, self.A)
 
     def get_B(self, salt, B):
@@ -41,7 +48,11 @@ class Client(object):
         base = B - self.k * util.mod_exp(self.g, x, self.N)
         exp = self.a + u * x
         S = util.mod_exp(base, exp, self.N)
-        self.K = hashlib.sha256(str(S)).hexdigest()
+
+        if self.tampered:
+            self.K = hashlib.sha256(str(0)).hexdigest()
+        else:
+            self.K = hashlib.sha256(str(S)).hexdigest()
 
     def check_hmac(self):
         hmac_sha256 = hmac.new(self.K, str(self.salt), hashlib.sha256)

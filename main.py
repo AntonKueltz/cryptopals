@@ -155,6 +155,9 @@ def s5():
     print '36: Implement Secure Remote Password (SRP)'
     print '{}\n'.format(set5.secure_remote_password())
 
+    print '37: Break SRP with a zero key'
+    print '{}\n'.format(set5.srp_w_zerokey())
+
     print '39: Implement RSA'
     print '{}\n'.format(set5.basic_rsa())
 
