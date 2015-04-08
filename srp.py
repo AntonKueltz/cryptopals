@@ -178,6 +178,7 @@ class MITMServer(object):
     def break_password(self):
         f = open('/usr/share/dict/words')
         guess = f.readline().strip()
+        client_hmac = self.client.get_hmac()
 
         while guess:
             xH = hashlib.sha256(str(self.salt) + guess).hexdigest()
@@ -190,7 +191,6 @@ class MITMServer(object):
 
             hmac_sha256 = hmac.new(K, str(self.salt), hashlib.sha256)
             server_hmac = hmac_sha256.hexdigest()
-            client_hmac = self.client.get_hmac()
 
             if hmac.compare_digest(client_hmac, server_hmac):
                 f.close()
