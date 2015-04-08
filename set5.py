@@ -52,12 +52,53 @@ def dh_param_injection():
 
 def dh_malicious_group():
     p = keyex.DiffieHellman.default_p
+    sha1 = hash_funcs.SHA1()
 
     for g in [1, p, p-1]:
         alice = keyex.DiffieHellman(g=g)
         bob = keyex.DiffieHellman(g=g)
 
-    return None
+        alice.computeShared(bob.getA())
+        bob.computeShared(alice.getA())
+
+        a_msg = 'I hope this doesn\'t get pwned'
+        a_iv = util.gen_random_bytes(16)
+        a_key = sha1.hash(alice.shared).decode('hex')[:16]
+        a_sends = aes_modes.AES_CBC_encrypt(a_msg, a_key, a_iv), a_iv
+
+        if g == 1:
+            e_key = sha1.hash(1).decode('hex')[:16]
+            e_msg = aes_modes.AES_CBC_decrypt(a_sends[0], e_key, a_iv)
+            e_msg = padding.validate(e_msg)
+        elif g == p:
+            e_key = sha1.hash(0).decode('hex')[:16]
+            e_msg = aes_modes.AES_CBC_decrypt(a_sends[0], e_key, a_iv)
+            e_msg = padding.validate(e_msg)
+        elif g == p-1:
+            for e_seed in [1, g, g**2 % p]:
+                e_key = sha1.hash(e_seed).decode('hex')[:16]
+                e_msg = aes_modes.AES_CBC_decrypt(a_sends[0], e_key, a_iv)
+                try:
+                    e_msg = padding.validate(e_msg)
+                    break
+                except:
+                    continue
+
+        if e_msg != a_msg:
+            return 'Intercepted Traffic Incorrectly Decrypted :( ' + str(g)
+
+        b_iv = util.gen_random_bytes(16)
+        b_key = sha1.hash(bob.shared).decode('hex')[:16]
+        b_msg = aes_modes.AES_CBC_decrypt(a_sends[0], b_key, a_iv)
+        b_msg = padding.validate(b_msg)
+        b_sends = aes_modes.AES_CBC_encrypt(b_msg, b_key, b_iv), b_iv
+
+        e_msg = aes_modes.AES_CBC_decrypt(b_sends[0], e_key, b_iv)
+        e_msg = padding.validate(e_msg)
+        if e_msg != b_msg:
+            return 'Intercepted Traffic Incorrectly Decrypted :( ' + str(g)
+
+    return 'All Traffic Intercepted And Decrypted!'
 
 
 def basic_rsa():
