@@ -3,6 +3,7 @@ import hash_funcs
 import keyex
 import padding
 import rsa
+import srp
 import util
 
 
@@ -85,7 +86,7 @@ def dh_malicious_group():
                     continue
 
         if e_msg != a_msg:
-            return 'Intercepted Traffic Incorrectly Decrypted :( ' + str(g)
+            return 'Intercepted Traffic Incorrectly Decrypted :( '
 
         b_iv = util.gen_random_bytes(16)
         b_key = sha1.hash(bob.shared).decode('hex')[:16]
@@ -96,9 +97,22 @@ def dh_malicious_group():
         e_msg = aes_modes.AES_CBC_decrypt(b_sends[0], e_key, b_iv)
         e_msg = padding.validate(e_msg)
         if e_msg != b_msg:
-            return 'Intercepted Traffic Incorrectly Decrypted :( ' + str(g)
+            return 'Intercepted Traffic Incorrectly Decrypted :( '
 
     return 'All Traffic Intercepted And Decrypted!'
+
+
+def secure_remote_password():
+    email = 'foo@bar.com'
+    password = '1337h@X0r'
+
+    client = srp.Client(email, password)
+    server = srp.Server(email, password)
+    client.set_server(server)
+    server.set_client(client)
+
+    client.initiate()
+    return '200 OK' if client.check_hmac() else '500 INTERNAL SERVER ERROR'
 
 
 def basic_rsa():

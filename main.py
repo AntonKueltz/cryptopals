@@ -152,6 +152,9 @@ def s5():
           '"g" parameters'
     print '{}\n'.format(set5.dh_malicious_group())
 
+    print '36: Implement Secure Remote Password (SRP)'
+    print '{}\n'.format(set5.secure_remote_password())
+
     print '39: Implement RSA'
     print '{}\n'.format(set5.basic_rsa())
 
