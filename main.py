@@ -158,6 +158,9 @@ def s5():
     print '37: Break SRP with a zero key'
     print '{}\n'.format(set5.srp_w_zerokey())
 
+    print '38: Offline dictionary attack on simplified SRP'
+    print '{}\n'.format(set5.simple_srp())
+
     print '39: Implement RSA'
     print '{}\n'.format(set5.basic_rsa())
 

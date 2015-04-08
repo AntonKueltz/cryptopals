@@ -112,7 +112,7 @@ def secure_remote_password():
     server.set_client(client)
 
     client.initiate()
-    return 'Login ' + 'Success' if server.check_hmac() else 'Failure'
+    return 'Login ' + ('Success' if server.check_hmac() else 'Failure')
 
 
 def srp_w_zerokey():
@@ -142,6 +142,19 @@ def srp_w_zerokey():
         retstr += 'Login ' + status + ' [A={}]\n'.format(Astr[i])
 
     return retstr[:-1]
+
+
+def simple_srp():
+    email = 'foo@bar.com'
+    password = 'abhorrent'
+
+    client = srp.SimpleClient(email, password)
+    server = srp.MITMServer(email, password)
+    client.set_server(server)
+    server.set_client(client)
+
+    client.initiate()
+    return server.break_password()
 
 
 def basic_rsa():

@@ -21,7 +21,7 @@ Set 3 ✓ [8/8 complete]
 
 Set 4 ✓ [8/8 complete]
 
-Set 5 ✗ [7/8 complete]
+Set 5 ✓ [8/8 complete]
 
 Set 6 ✗ [0/8 complete]
 
