@@ -8,6 +8,7 @@ import set2
 import set3
 import set4
 import set5
+import set6
 import test
 import util
 
@@ -167,8 +168,13 @@ def s5():
     print '40: Implement an E=3 RSA Broadcast attack'
     print '{}\n'.format(set5.rsa_broadcast())
 
+
+def s6():
+    print '41: Implement unpadded message recovery oracle'
+    print '{}\n'.format(set6.rsa_recovery_oracle())
+
 if __name__ == "__main__":
-    sets = [s1, s2, s3, s4, s5]
+    sets = [s1, s2, s3, s4, s5, s6]
 
     if len(sys.argv) > 1:
         if sys.argv[1] == 'test':
