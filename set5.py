@@ -1,3 +1,10 @@
+import hashlib
+import hmac
+
+from Crypto.Random import random
+from requests import post
+from urllib2 import urlopen
+
 import aes_modes
 import hash_funcs
 import keyex
@@ -102,22 +109,62 @@ def dh_malicious_group():
     return 'All Traffic Intercepted And Decrypted!'
 
 
-def secure_remote_password():
-    email = 'foo@bar.com'
-    password = 'password'
+def network_srp(A=None):
+    base_url = 'http://0.0.0.0:8080/login'
+    N = int(
+        'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024'
+        'e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd'
+        '3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec'
+        '6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f'
+        '24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361'
+        'c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552'
+        'bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff'
+        'fffffffffffff', 16
+    )
+    g = 2
+    k = 3
+    I = 'foo@bar.com'
+    P = 'abhorrent'
 
-    client = srp.Client(email, password)
-    server = srp.Server(email, password)
-    client.set_server(server)
-    server.set_client(client)
+    if not A:
+        a = random.randint(0, N-1)
+        A = util.mod_exp(g, a, N)
 
-    client.initiate()
-    return 'Login ' + ('Success' if server.check_hmac() else 'Failure')
+    args = '?I={}&A={}'.format(I, A)
+    status = post(base_url + args)
+
+    if status.status_code != 200:
+        return "Failed To Log In :("
+
+    get_data = urlopen(base_url).read()
+    salt, B = map(int, get_data.strip().split(' '))
+
+    if A % N == 0:
+        S = 0
+    else:
+        uH = hashlib.sha256(str(A) + str(B)).hexdigest()
+        u = int(uH, 16)
+
+        xH = hashlib.sha256(str(salt) + str(P)).hexdigest()
+        x = int(xH, 16)
+
+        base = B - k * util.mod_exp(g, x, N)
+        exp = a + u * x
+        S = util.mod_exp(base, exp, N)
+
+    K = hashlib.sha256(str(S)).hexdigest()
+    client_hmac = hmac.new(K, str(salt), hashlib.sha256).hexdigest()
+
+    args = '?hmac={}'.format(client_hmac)
+    status = post(base_url + args)
+
+    if status.status_code != 200:
+        return "Failed To Log In :("
+
+    return "Successfully Logged In!"
 
 
 def srp_w_zerokey():
-    email = 'foo@bar.com'
-    password = 'password'
     N = int(
         'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024'
         'e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd'
@@ -132,19 +179,13 @@ def srp_w_zerokey():
 
     for i, badA in enumerate([0, N, N*2]):
         Astr = ['0', 'N', 'N*2']
-        client = srp.Client(email, password, tampered=True, A=badA)
-        server = srp.Server(email, 'wrongpassword')
-        client.set_server(server)
-        server.set_client(client)
+        status = network_srp(A=badA)
+        retstr += status + ' [A={}]\n'.format(Astr[i])
 
-        client.initiate()
-        status = 'Success' if server.check_hmac() else 'Failure'
-        retstr += 'Login ' + status + ' [A={}]\n'.format(Astr[i])
-
-    return retstr[:-1]
+    return retstr
 
 
-def simple_srp():
+def simple_dict_srp():
     email = 'foo@bar.com'
     password = 'abhorrent'
 

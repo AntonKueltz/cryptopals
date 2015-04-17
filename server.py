@@ -1,5 +1,9 @@
+import hashlib
+import hmac
+import json
 import time
 
+from Crypto.Random import random
 import web
 
 import mac
@@ -8,7 +12,7 @@ import util
 
 render = web.template.render('html/')
 
-urls = ('/', 'index', '/hmac', 'hmac', '/login', 'login')
+urls = ('/', 'index', '/hmac', 'hmac_page', '/login', 'login')
 key = None
 
 login_form = web.form.Form(
@@ -28,7 +32,7 @@ class index():
         return 'Cryptopals Landing Page'
 
 
-class hmac():
+class hmac_page():
     def POST(self):
         data = web.input()
         valid = self.validate_sig(data.file, data.sig, int(data.stime))
@@ -55,23 +59,59 @@ class hmac():
 
 
 class login():
+    N = int(
+        'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024'
+        'e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd'
+        '3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec'
+        '6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f'
+        '24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361'
+        'c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552'
+        'bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff'
+        'fffffffffffff', 16
+    )
+    g = 2
+    k = 3
+    passwd = {'foo@bar.com': 'abhorrent'}
+
+    salt, B, K = None, None, None
+
     def GET(self):
-        form = login_form()
-        return render.login(form)
+        return '{} {}'.format(login.salt, login.B)
 
     def POST(self):
-        form = login_form()
-        if not form.validates():
-            return render.login(form)
-        else:
-            clientlogic = srp.Client('foo@bar.com', 'password', tampered=True)
-            serverlogic = srp.Server(form.d.email, form.d.password)
+        data = web.input()
+        keys = data.keys()
 
-            clientlogic.set_server(serverlogic)
-            serverlogic.set_client(clientlogic)
-            clientlogic.initiate()
+        if 'I' in keys and 'A' in keys:
+            login.salt = random.randint(0, 2**32-1)
+            P = login.passwd[data.I]
 
-            return 'Success' if clientlogic.check_hmac() else 'Failure'
+            xH = hashlib.sha256(str(login.salt) + P).hexdigest()
+            x = int(xH, 16)
+            v = util.mod_exp(login.g, x, login.N)
+
+            A = int(data.A)
+            b = random.randint(0, login.N-1)
+            exp_term = util.mod_exp(login.g, b, login.N)
+            login.B = (login.k * v + exp_term) % login.N
+
+            uH = hashlib.sha256(str(A) + str(login.B)).hexdigest()
+            u = int(uH, 16)
+
+            base = A * util.mod_exp(v, u, self.N) % self.N
+            S = util.mod_exp(base, b, login.N)
+            login.K = hashlib.sha256(str(S)).hexdigest()
+
+        elif 'hmac' in keys:
+            raw_hmac = hmac.new(login.K, str(login.salt), hashlib.sha256)
+            server_hmac = raw_hmac.hexdigest()
+            client_hmac = str(data.hmac)
+            if hmac.compare_digest(client_hmac, server_hmac):
+                web.ctx.status = '200 OK'
+                return 'explicit 200'
+            else:
+                web.ctx.status = '403 Forbidden'
+                return 'explicit 403'
 
 if __name__ == '__main__':
     start_server()

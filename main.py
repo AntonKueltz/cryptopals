@@ -154,13 +154,13 @@ def s5():
     print '{}\n'.format(set5.dh_malicious_group())
 
     print '36: Implement Secure Remote Password (SRP)'
-    print '{}\n'.format(set5.secure_remote_password())
+    print '{}\n'.format(set5.network_srp())
 
     print '37: Break SRP with a zero key'
     print '{}\n'.format(set5.srp_w_zerokey())
 
     print '38: Offline dictionary attack on simplified SRP'
-    print '{}\n'.format(set5.simple_srp())
+    print '{}\n'.format(set5.simple_dict_srp())
 
     print '39: Implement RSA'
     print '{}\n'.format(set5.basic_rsa())
