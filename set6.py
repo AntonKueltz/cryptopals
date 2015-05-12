@@ -108,3 +108,29 @@ def dsa_parameter_tampering():
     assert(d.verify('Goodbye World', r, s))
 
     return 'Successfully signed "Hello World" and "Goodbye World"'
+
+
+def rsa_parity_oracle():
+    r = rsa.RSA()
+    m = 'VGhhdCdzIHdoeSBJIGZvdW5kIHlvdSBkb24ndCBwbGF5IGFyb3VuZCB3aXRoIHRoZSBG' \
+        'dW5reSBDb2xkIE1lZGluYQ=='.decode('base64')
+
+    c = r.enc(m)
+    bounds, i = [(0, 1), (1, 1)], 0
+
+    for _ in range(r.n.bit_length()):
+        # print util.int_to_ascii(bounds[1][0] * r.n / bounds[1][1])
+
+        nm = bounds[0][0] * bounds[1][1] + bounds[1][0] * bounds[0][1]
+        dm = bounds[0][1] * bounds[1][1] * 2
+        gcd = util.gcd(nm, dm)
+        nm, dm = nm / gcd, dm / gcd
+
+        c = (util.mod_exp(2, r.e, r.n) * c) % r.n
+
+        if util.mod_exp(c, r.d, r.n) % 2 == 0:
+            bounds[1] = (nm, dm)
+        else:
+            bounds[0] = (nm, dm)
+
+    return util.int_to_ascii(bounds[1][0] * r.n / bounds[1][1])

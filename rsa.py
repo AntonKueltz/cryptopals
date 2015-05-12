@@ -8,7 +8,7 @@ class RSA():
         phiN = 0
 
         while util.gcd(3, phiN) != 1:
-            p, q = number.getPrime(modsize), number.getPrime(modsize)
+            p, q = number.getPrime(modsize / 2), number.getPrime(modsize / 2)
             N, phiN = p * q, (p-1) * (q-1)
 
         e = 3

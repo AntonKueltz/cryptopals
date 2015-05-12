@@ -182,6 +182,9 @@ def s6():
     print '45: DSA parameter tampering'
     print '{}\n'.format(set6.dsa_parameter_tampering())
 
+    print '46: RSA parity oracle'
+    print '{}\n'.format(set6.rsa_parity_oracle())
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6]
 
