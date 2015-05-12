@@ -173,6 +173,12 @@ def s6():
     print '41: Implement unpadded message recovery oracle'
     print '{}\n'.format(set6.rsa_recovery_oracle())
 
+    print '43: DSA key recovery from nonce'
+    print '{}\n'.format(set6.dsa_key_recovery())
+
+    print '44: DSA nonce recovery from repeated nonce'
+    print '{}\n'.format(set6.dsa_repeated_nonce_recovery())
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6]
 
