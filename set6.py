@@ -91,3 +91,20 @@ def dsa_repeated_nonce_recovery():
         if sha1(util.int_to_hexstr(x)).hexdigest() == fingerprint:
             assert(y == util.mod_exp(d.g, x, d.p))
             return x
+
+
+def dsa_parameter_tampering():
+    d = dsa.DSA()
+
+    d.g = 0
+    r, s = d.sign('Original Message')
+    assert(d.verify('Bad Message', r, s))
+
+    d.g = d.p + 1
+    z = 2
+    r = util.mod_exp(d.y, z, d.p) % d.q
+    s = (r * util.mod_inv(z, d.q)) % d.q
+    assert(d.verify('Hello World', r, s))
+    assert(d.verify('Goodbye World', r, s))
+
+    return 'Successfully signed "Hello World" and "Goodbye World"'

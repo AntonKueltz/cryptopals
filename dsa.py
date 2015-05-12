@@ -31,20 +31,21 @@ class DSA():
     def sign(self, m):
         r, s = 0, 0
 
-        while r == 0 or s == 0:
-            k = random.randint(1, self.q-1)
-            r = util.mod_exp(self.g, k, self.p) % self.q
+        # while r == 0 or s == 0:
+        k = random.randint(1, self.q-1)
+        r = util.mod_exp(self.g, k, self.p) % self.q
 
-            hash_int = int(sha1(m).hexdigest(), 16)
-            s = (util.mod_inv(k, self.q) * (hash_int + self.x * r)) % self.q
+        hash_int = int(sha1(m).hexdigest(), 16)
+        s = (util.mod_inv(k, self.q) * (hash_int + self.x * r)) % self.q
 
         return (r, s)
 
     def verify(self, m, r, s):
+        '''
         if r <= 0 or r >= self.q or s <= 0 or s >= self.q:
             print "BAD FAIL"
             return False
-
+        '''
         w = util.mod_inv(s, self.q)
         u1 = (int(sha1(m).hexdigest(), 16) * w) % self.q
         u2 = (r * w) % self.q

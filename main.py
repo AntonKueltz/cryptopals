@@ -179,6 +179,9 @@ def s6():
     print '44: DSA nonce recovery from repeated nonce'
     print '{}\n'.format(set6.dsa_repeated_nonce_recovery())
 
+    print '45: DSA parameter tampering'
+    print '{}\n'.format(set6.dsa_parameter_tampering())
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6]
 
