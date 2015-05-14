@@ -137,13 +137,13 @@ def rsa_parity_oracle():
 
 def pkcs15_padding_oracle(c, cipher):
     m = cipher.dec(c)
-    m = m.encode('hex').zfill(64)
+    m = m.encode('hex').zfill(util.ceiling(cipher.n.bit_length(), 4))
     return m[:4] == '0002'
 
 
 def rsa_pkcs15_oracle_easy():
     cipher = rsa.RSA(modsize=256)
-    m = padding.pkcs1_5('kick it, CC', 32)
+    m = padding.pkcs1_5('kick it, CC', 256 / 8)
 
     c = cipher.enc(m)
     B = 2 ** (256 - 16)
@@ -182,4 +182,63 @@ def rsa_pkcs15_oracle_easy():
         M[1] = min(b, (3*B - 1 + r*cipher.n) / s)
         i += 1
 
-    print padding.validate1_5(util.int_to_ascii(M[0]))
+    return padding.validate1_5(util.int_to_ascii(M[0]))
+
+
+def rsa_pkcs15_oracle_complete():
+    cipher = rsa.RSA(modsize=768)
+    m = padding.pkcs1_5('kick it, CC', 768 / 8)
+
+    c = cipher.enc(m)
+    B = 2 ** (768 - 16)
+    M = [(2*B, 3*B-1)]
+    i = 1
+    update_c = lambda s: (c * util.mod_exp(s, cipher.e, cipher.n)) % cipher.n
+
+    while not (len(M) == 1 and M[0][0] == M[0][1]):
+        if i == 1:
+            s = util.ceiling(cipher.n, 3*B)
+            c_ = update_c(s)
+
+            while not pkcs15_padding_oracle(c_, cipher):
+                s += 1
+                c_ = update_c(s)
+
+        elif len(M) >= 2:
+            s += 1
+            c_ = update_c(s)
+
+            while not pkcs15_padding_oracle(c_, cipher):
+                s += 1
+                c_ = update_c(s)
+
+        else:
+            a, b = M[0][0], M[0][1]
+            r = util.ceiling(2 * (b*s - 2*B), cipher.n)
+            s = util.ceiling(2*B + r*cipher.n, b)
+            c_ = c_ = update_c(s)
+
+            while not pkcs15_padding_oracle(c_, cipher):
+                if s >= (3*B + r*cipher.n) / a:
+                    r += 1
+                    s = util.ceiling(2*B + r*cipher.n, b)
+
+                else:
+                    s += 1
+
+                c_ = c_ = update_c(s)
+
+        newM = []
+        for (a, b) in M:
+            rlow = util.ceiling((a*s - 3*B + 1), cipher.n)
+            rhigh = (b*s - 2*B) / cipher.n
+
+            for r in range(rlow, rhigh + 1):
+                newa = max(a, util.ceiling(2*B + r*cipher.n, s))
+                newb = min(b, (3*B - 1 + r*cipher.n) / s)
+                newM.append((newa, newb))
+
+        M = list(set(newM))
+        i += 1
+
+    return padding.validate1_5(util.int_to_ascii(M[0][0]))

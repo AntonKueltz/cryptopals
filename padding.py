@@ -61,4 +61,4 @@ def validate1_5(ptxt):
     except:
         raise PaddingError('No 0x00 delimiter found!', 1.5)
 
-    return ptxt[1+idx:]
+    return ptxt[2+idx:]

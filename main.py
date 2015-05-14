@@ -185,6 +185,12 @@ def s6():
     print '46: RSA parity oracle'
     print '{}\n'.format(set6.rsa_parity_oracle())
 
+    print '47: Bleichenbacher\'s PKCS 1.5 Padding Oracle (Simple Case)'
+    print '{}\n'.format(set6.rsa_pkcs15_oracle_easy())
+
+    print '48: Bleichenbacher\'s PKCS 1.5 Padding Oracle (Complete Case)'
+    print '{}\n'.format(set6.rsa_pkcs15_oracle_complete())
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6]
 
