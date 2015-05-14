@@ -109,6 +109,10 @@ def gcd(a, b):
     return a
 
 
+def ceiling(a, b):
+    return (a / b) + (1 if a % b else 0)
+
+
 def mod_inv(n, mod):
     n = n % mod
     t, newt = 0, 1

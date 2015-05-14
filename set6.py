@@ -3,6 +3,7 @@ from itertools import combinations
 import re
 
 import dsa
+import padding
 import rsa
 import util
 
@@ -116,11 +117,9 @@ def rsa_parity_oracle():
         'dW5reSBDb2xkIE1lZGluYQ=='.decode('base64')
 
     c = r.enc(m)
-    bounds, i = [(0, 1), (1, 1)], 0
+    bounds = [(0, 1), (1, 1)]
 
     for _ in range(r.n.bit_length()):
-        # print util.int_to_ascii(bounds[1][0] * r.n / bounds[1][1])
-
         nm = bounds[0][0] * bounds[1][1] + bounds[1][0] * bounds[0][1]
         dm = bounds[0][1] * bounds[1][1] * 2
         gcd = util.gcd(nm, dm)
@@ -134,3 +133,53 @@ def rsa_parity_oracle():
             bounds[0] = (nm, dm)
 
     return util.int_to_ascii(bounds[1][0] * r.n / bounds[1][1])
+
+
+def pkcs15_padding_oracle(c, cipher):
+    m = cipher.dec(c)
+    m = m.encode('hex').zfill(64)
+    return m[:4] == '0002'
+
+
+def rsa_pkcs15_oracle_easy():
+    cipher = rsa.RSA(modsize=256)
+    m = padding.pkcs1_5('kick it, CC', 32)
+
+    c = cipher.enc(m)
+    B = 2 ** (256 - 16)
+    M = [2*B, 3*B-1]
+    i = 1
+    update_c = lambda s: (c * util.mod_exp(s, cipher.e, cipher.n)) % cipher.n
+
+    while not M[0] == M[1]:
+        a, b = M[0], M[1]
+
+        if i == 1:
+            s = util.ceiling(cipher.n, 3*B)
+            c_ = update_c(s)
+
+            while not pkcs15_padding_oracle(c_, cipher):
+                s += 1
+                c_ = update_c(s)
+
+        else:
+            r = util.ceiling(2 * (b*s - 2*B), cipher.n)
+            s = util.ceiling(2*B + r*cipher.n, b)
+            c_ = c_ = update_c(s)
+
+            while not pkcs15_padding_oracle(c_, cipher):
+                if s >= (3*B + r*cipher.n) / a:
+                    r += 1
+                    s = util.ceiling(2*B + r*cipher.n, b)
+
+                else:
+                    s += 1
+
+                c_ = c_ = update_c(s)
+
+        r = util.ceiling((a*s - 3*B + 1), cipher.n)
+        M[0] = max(a, util.ceiling(2*B + r*cipher.n, s))
+        M[1] = min(b, (3*B - 1 + r*cipher.n) / s)
+        i += 1
+
+    print padding.validate1_5(util.int_to_ascii(M[0]))
