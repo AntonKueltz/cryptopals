@@ -23,6 +23,28 @@ def rsa_recovery_oracle():
     return util.int_to_ascii(util.mod_inv(s, N) * ptxt_ % N)
 
 
+def verify_sig(m, sig, r):
+    hexsig = util.int_to_hexstr(util.mod_exp(sig, r.e, r.n))
+    i = hexsig.index('ff00')
+    h = hexsig[i+4:i+44]
+    return sha1(m).hexdigest() == h
+
+
+def e_is_3_attack():
+    r = rsa.RSA()
+    m = "hi mom"
+    h = sha1(m).hexdigest()
+
+    mystr = chr(0x00) + chr(0x01) + chr(0xff) + chr(0x00)
+    mystr += h.decode('hex')
+    mystr += ((1024 / 8) - len(mystr)) * chr(0x00)
+
+    forged = util.kth_root(int(mystr.encode('hex'), 16), r.e, rounded=True) + 1
+    verified = verify_sig(m, forged, r)
+
+    return 'Successfully forged \'hi mom\' sig' if verified else 'Sig failed'
+
+
 def dsa_key_recovery():
     d = dsa.DSA()
     y = int(
@@ -165,7 +187,7 @@ def rsa_pkcs15_oracle_easy():
         else:
             r = util.ceiling(2 * (b*s - 2*B), cipher.n)
             s = util.ceiling(2*B + r*cipher.n, b)
-            c_ = c_ = update_c(s)
+            c_ = update_c(s)
 
             while not pkcs15_padding_oracle(c_, cipher):
                 if s >= (3*B + r*cipher.n) / a:
@@ -175,7 +197,7 @@ def rsa_pkcs15_oracle_easy():
                 else:
                     s += 1
 
-                c_ = c_ = update_c(s)
+                c_ = update_c(s)
 
         r = util.ceiling((a*s - 3*B + 1), cipher.n)
         M[0] = max(a, util.ceiling(2*B + r*cipher.n, s))
@@ -216,7 +238,7 @@ def rsa_pkcs15_oracle_complete():
             a, b = M[0][0], M[0][1]
             r = util.ceiling(2 * (b*s - 2*B), cipher.n)
             s = util.ceiling(2*B + r*cipher.n, b)
-            c_ = c_ = update_c(s)
+            c_ = update_c(s)
 
             while not pkcs15_padding_oracle(c_, cipher):
                 if s >= (3*B + r*cipher.n) / a:
@@ -226,7 +248,7 @@ def rsa_pkcs15_oracle_complete():
                 else:
                     s += 1
 
-                c_ = c_ = update_c(s)
+                c_ = update_c(s)
 
         newM = []
         for (a, b) in M:

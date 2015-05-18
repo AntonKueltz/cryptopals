@@ -173,6 +173,9 @@ def s6():
     print '41: Implement unpadded message recovery oracle'
     print '{}\n'.format(set6.rsa_recovery_oracle())
 
+    print '42: Bleichenbacher\'s e=3 RSA Attack'
+    print '{}\n'.format(set6.e_is_3_attack())
+
     print '43: DSA key recovery from nonce'
     print '{}\n'.format(set6.dsa_key_recovery())
 

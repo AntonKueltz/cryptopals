@@ -23,6 +23,6 @@ Set 4 ✓ [8/8 complete]
 
 Set 5 ✓ [8/8 complete]
 
-Set 6 ✗ [5/8 complete]
+Set 6 ✓ [8/8 complete]
 
 Set 7 ✗ [0/8 complete]

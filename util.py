@@ -135,7 +135,7 @@ def mod_inv(n, mod):
         return t
 
 
-def kth_root(n, k):
+def kth_root(n, k, rounded=False):
     bits = len(bin(n)[2:])
     mn, mx = (2**(bits / k)), (2**(bits / k + 1))
     mid = (mx + mn) / 2
@@ -150,6 +150,13 @@ def kth_root(n, k):
             mx = mid
 
         mid = (mx + mn) / 2
-        guess = mid**k
+
+        if mid**k == guess:
+            if rounded:
+                return mid
+            else:
+                return None
+        else:
+            guess = mid**k
 
     return mid
