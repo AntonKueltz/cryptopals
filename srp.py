@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import sys
 
 from Crypto.Random import random
 
@@ -101,7 +102,12 @@ class Server(object):
         hmac_sha256 = hmac.new(self.K, str(self.salt), hashlib.sha256)
         server_hmac = hmac_sha256.hexdigest()
         client_hmac = self.client.get_hmac()
-        return hmac.compare_digest(client_hmac, server_hmac)
+
+        if sys.version_info < (2, 7, 7):
+            # DONT EVER DO THIS IN REAL CODE
+            return client_hmac == server_hmac
+        else:
+            return hmac.compare_digest(client_hmac, server_hmac)
 
 
 class SimpleClient(object):
@@ -192,7 +198,14 @@ class MITMServer(object):
             hmac_sha256 = hmac.new(K, str(self.salt), hashlib.sha256)
             server_hmac = hmac_sha256.hexdigest()
 
-            if hmac.compare_digest(client_hmac, server_hmac):
+            mac_equal = False
+            if sys.version_info < (2, 7, 7):
+                # DONT EVER DO THIS IN REAL CODE
+                mac_equal = client_hmac == server_hmac
+            else:
+                mac_equal = hmac.compare_digest(client_hmac, server_hmac)
+
+            if mac_equal:
                 f.close()
                 return 'Password Cracked: {}'.format(guess)
             else:

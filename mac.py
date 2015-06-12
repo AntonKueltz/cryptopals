@@ -1,4 +1,7 @@
+from Crypto.Cipher import AES
+
 import hash_funcs
+import aes_modes
 
 
 class MACError(Exception):
@@ -16,6 +19,11 @@ def md4mac(key, msg):
     md4 = hash_funcs.MD4()
     mac = md4.hash(key + msg)
     return mac
+
+
+def cbcmac(key, iv, msg):
+    ctxt = aes_modes.AES_CBC_encrypt(msg, key, iv)
+    return ctxt[-AES.block_size:]
 
 
 def authenticate_sha1(key, msg, mac):

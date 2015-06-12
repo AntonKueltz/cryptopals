@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import sys
 import time
 
 from Crypto.Random import random
@@ -12,13 +13,12 @@ import util
 
 render = web.template.render('html/')
 
-urls = ('/', 'index', '/hmac', 'hmac_page', '/login', 'login')
-key = None
+urls = ('/', 'index', '/hmac', 'hmac_page', '/login', 'login', '/bank', 'bank')
 
-login_form = web.form.Form(
-    web.form.Textbox('email'),
-    web.form.Password('password'),
-    web.form.Button('Login'),
+send_spacebucks_form = web.form.Form(
+    web.form.Textbox('send to'),
+    web.form.Textbox('amount'),
+    web.form.Button('Transfer'),
 )
 
 
@@ -106,12 +106,27 @@ class login():
             raw_hmac = hmac.new(login.K, str(login.salt), hashlib.sha256)
             server_hmac = raw_hmac.hexdigest()
             client_hmac = str(data.hmac)
-            if hmac.compare_digest(client_hmac, server_hmac):
+
+            mac_equal = False
+            if sys.version_info < (2, 7, 7):
+                # DONT EVER DO THIS IN REAL CODE
+                mac_equal = client_hmac == server_hmac
+            else:
+                mac_equal = hmac.compare_digest(client_hmac, server_hmac)
+
+            if mac_equal:
                 web.ctx.status = '200 OK'
                 return 'explicit 200'
             else:
                 web.ctx.status = '403 Forbidden'
                 return 'explicit 403'
+
+
+class bank():
+    def GET(self):
+        f = send_spacebucks_form()
+        return f.render()
+
 
 if __name__ == '__main__':
     start_server()
