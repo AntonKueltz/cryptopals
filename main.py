@@ -9,6 +9,7 @@ import set3
 import set4
 import set5
 import set6
+import set7
 import test
 import util
 
@@ -194,8 +195,13 @@ def s6():
     print '48: Bleichenbacher\'s PKCS 1.5 Padding Oracle (Complete Case)'
     print '{}\n'.format(set6.rsa_pkcs15_oracle_complete())
 
+
+def s7():
+    print '49 CBC-MAC Message Forgery'
+    print '{}\n'.format(set7.cbcmac_forgery())
+
 if __name__ == "__main__":
-    sets = [s1, s2, s3, s4, s5, s6]
+    sets = [s1, s2, s3, s4, s5, s6, s7]
 
     if len(sys.argv) > 1:
         if sys.argv[1] == 'test':

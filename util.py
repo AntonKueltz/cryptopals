@@ -1,4 +1,4 @@
-from random import randint
+from os import urandom
 
 
 def hex_to_base64(hex):
@@ -54,12 +54,7 @@ def hamming(s1, s2):
 
 
 def gen_random_bytes(byte_count):
-    byts = ''
-
-    for _ in xrange(byte_count):
-        byts += chr(randint(0, 127))
-
-    return byts
+    return urandom(byte_count)
 
 
 def parse_cookie(cookie):

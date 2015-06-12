@@ -1,7 +1,7 @@
 from Crypto.Cipher import AES
 
-import hash_funcs
 import aes_modes
+import hash_funcs
 
 
 class MACError(Exception):

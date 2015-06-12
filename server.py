@@ -13,13 +13,7 @@ import util
 
 render = web.template.render('html/')
 
-urls = ('/', 'index', '/hmac', 'hmac_page', '/login', 'login', '/bank', 'bank')
-
-send_spacebucks_form = web.form.Form(
-    web.form.Textbox('send to'),
-    web.form.Textbox('amount'),
-    web.form.Button('Transfer'),
-)
+urls = ('/', 'index', '/hmac', 'hmac_page', '/login', 'login')
 
 
 def start_server():
@@ -120,12 +114,6 @@ class login():
             else:
                 web.ctx.status = '403 Forbidden'
                 return 'explicit 403'
-
-
-class bank():
-    def GET(self):
-        f = send_spacebucks_form()
-        return f.render()
 
 
 if __name__ == '__main__':
