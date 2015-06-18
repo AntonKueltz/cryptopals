@@ -197,8 +197,11 @@ def s6():
 
 
 def s7():
-    print '49 CBC-MAC Message Forgery'
+    print '49: CBC-MAC Message Forgery'
     print '{}\n'.format(set7.cbcmac_forgery())
+
+    print '50: Hashing with CBC-MAC'
+    print '{}\n'.format(set7.cbcmac_collision())
 
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6, s7]

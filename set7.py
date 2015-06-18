@@ -43,6 +43,23 @@ def cbcmac_forgery():
     pad = padding.pkcs7(valid_msg)[len(valid_msg):]
     bad_msg = ';{}:1000000'.format(our_id)
     forged_mac = forge_mac(valid_mac, bad_msg, our_id)
-    # assert(validate_message(valid_msg + pad + bad_msg, zero_iv, forged_mac))
 
     return 'Successfully stole 1M spacebucks!'
+
+
+def cbcmac_collision():
+    key, iv = 'YELLOW SUBMARINE', chr(0x00) * 16
+    str1 = 'alert(\'MZA who was that?\');\n'
+    target_hash = mac.cbcmac(key, iv, str1)
+
+    str2 = 'alert(\'Ayo, the Wu is back!\');//'
+    intermediate_hash = mac.cbcmac(key, iv, str2)
+
+    block0 = chr(0x10) * 16
+    block1 = util.xor(intermediate_hash, str1[:16])
+    block2 = str1[16:]
+    valid_snippet = str2 + block0 + block1 + block2
+    collision_hash = mac.cbcmac(key, iv, valid_snippet)
+
+    collision = collision_hash == target_hash
+    return 'Created valid code snippet!' if collision else 'Incorrect hash :('

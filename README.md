@@ -23,4 +23,4 @@ I have only run this code on machines that have python 2.7.x, older versions of 
 * Set 4 ✓ [8/8 complete]
 * Set 5 ✓ [8/8 complete]
 * Set 6 ✓ [8/8 complete]
-* Set 7 ✗ [1/8 complete]
+* Set 7 ✗ [2/8 complete]
