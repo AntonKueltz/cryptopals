@@ -150,8 +150,8 @@ def s5():
           'parameter injection'
     print '{}\n'.format(set5.dh_param_injection())
 
-    print '35: Implement DH with negotiated groups, and break with malicious ' \
-          '"g" parameters'
+    print '35: Implement DH with negotiated groups, and break with malicious' \
+          ' "g" parameters'
     print '{}\n'.format(set5.dh_malicious_group())
 
     print '36: Implement Secure Remote Password (SRP)'
@@ -202,6 +202,9 @@ def s7():
 
     print '50: Hashing with CBC-MAC'
     print '{}\n'.format(set7.cbcmac_collision())
+
+    print '51: Compression Ratio Side-Channel Attacks'
+    print '{}\n'.format(set7.compression_side_channel())
 
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6, s7]

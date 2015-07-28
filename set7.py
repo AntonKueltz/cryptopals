@@ -1,4 +1,5 @@
 import mac
+import oracle
 import padding
 import util
 
@@ -63,3 +64,40 @@ def cbcmac_collision():
 
     collision = collision_hash == target_hash
     return 'Created valid code snippet!' if collision else 'Incorrect hash :('
+
+
+def calc_padding(content):
+    padding = 'ABCDEFGHIJKLMNOP'
+    curlen = oracle.detect_compressed_size(content)
+    i = 0
+
+    while oracle.detect_compressed_size(content + padding[:i]) == curlen:
+        i += 1
+
+    return padding[:i-1]
+
+
+def compression_side_channel():
+    content = 'sessionid='
+    shortest = ['']
+
+    while True:
+        minlen = 1000000
+        round_shortest = []
+        padding = calc_padding(content + shortest[0])
+
+        for guess in map(chr, range(0xff + 1)):
+            for cand in shortest:
+                intxt = padding + content + cand + guess
+                length = oracle.detect_compressed_size(intxt)
+
+                if length == minlen:
+                    round_shortest.append(cand + guess)
+                elif length < minlen:
+                    round_shortest = [cand + guess]
+                    minlen = length
+
+        shortest = round_shortest[:]
+
+        if len(shortest) == 1 and shortest[0][-1] == '\n':
+            return shortest[0][:-1]
