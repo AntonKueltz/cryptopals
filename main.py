@@ -206,6 +206,9 @@ def s7():
     print '51: Compression Ratio Side-Channel Attacks'
     print '{}\n'.format(set7.compression_side_channel())
 
+    print '56: RC4 Single-Byte Biases'
+    print '{}\n'.format(set7.rc4_bit_biases())
+
 
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6, s7]
