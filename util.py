@@ -65,7 +65,7 @@ def parse_cookie(cookie):
 
         try:
             d[tmp[0]] = tmp[1]
-        except:
+        except KeyError:
             print "Malformed Cookie!"
             return None
 

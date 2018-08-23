@@ -1,3 +1,5 @@
+import operator
+
 import mac
 import oracle
 import padding
@@ -101,3 +103,32 @@ def compression_side_channel():
 
         if len(shortest) == 1 and shortest[0][-1] == '\n':
             return shortest[0][:-1]
+
+
+def rc4_bit_biases():
+    cookie_len = len(oracle.rc4_encryption_oracle(''))
+    z16, z32 = 15, 31
+    z16_bias, z32_bias = 0xf0, 0xe0
+
+    for i in range((cookie_len / 2) + 1):
+        z16_map, z32_map = {}, {}
+
+        for j in xrange(2**24):
+            # if j % 1000 == 0:
+            #     print j
+            offset = z16 - i
+            request = 'A' * offset
+            result = oracle.rc4_encryption_oracle(request)
+
+            try:
+                z16_map[result[z16]] += 1
+            except KeyError:
+                z16_map[result[z16]] = 1
+            try:
+                z32_map[result[z32]] += 1
+            except KeyError:
+                z32_map[result[z32]] = 1
+
+        z16_char = max(z16_map.items(), key=operator.itemgetter(1))[0]
+        z32_char = max(z32_map.items(), key=operator.itemgetter(1))[0]
+        print chr(ord(z16_char) ^ z16_bias), chr(ord(z32_char) ^ z32_bias)

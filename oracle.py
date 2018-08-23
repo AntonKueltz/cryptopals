@@ -1,6 +1,6 @@
 from zlib import compress
 
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES, ARC4
 
 from aes_modes import AES_CBC_encrypt
 from util import gen_random_bytes
@@ -33,3 +33,11 @@ def detect_compressed_size(ptxt):
 
     ctxt = AES_CBC_encrypt(compress(request), key, iv)
     return len(ctxt)
+
+
+def rc4_encryption_oracle(request):
+    cookie = 'QkUgU1VSRSBUTyBEUklOSyBZT1VSIE9WQUxUSU5F'.decode('base64')
+    fresh_key = gen_random_bytes(16)
+
+    cipher = ARC4.new(fresh_key)
+    return cipher.encrypt(request + cookie)

@@ -206,6 +206,7 @@ def s7():
     print '51: Compression Ratio Side-Channel Attacks'
     print '{}\n'.format(set7.compression_side_channel())
 
+
 if __name__ == "__main__":
     sets = [s1, s2, s3, s4, s5, s6, s7]
 
