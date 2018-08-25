@@ -8,8 +8,8 @@ class Solution:
         self.solver = solver
 
     def __call__(self):
-        print '\033[94m' + self.title + '\033[0m'
-        result = self.solver().rstrip()
+        print '\033[94m[' + self.title + ']\033[0m'
+        result = str(self.solver()).rstrip()
         print result + '\n'
 
 

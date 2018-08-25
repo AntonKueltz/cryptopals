@@ -16,10 +16,10 @@ def aes_ecb_decrypt(ctxt, key):
 
 
 def p07():
+    key = 'YELLOW SUBMARINE'
+
     with open('Data/7.txt') as f:
         data = b64decode(f.read().replace('\n', ''))
-        key = 'YELLOW SUBMARINE'
-
         return aes_ecb_decrypt(data, key)
 
 
