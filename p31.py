@@ -5,7 +5,7 @@ from time import sleep, time
 from p28 import SHA1
 
 from requests import post, ConnectionError
-from web import application, ctx, input as web_input, template
+from web import application, ctx, input as web_input
 
 urls = ('/hmac', 'hmac_page')
 master_key = urandom(16)
