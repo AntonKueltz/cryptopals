@@ -32,7 +32,7 @@ def main(set=None, problem=None):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--set', type=int, metavar='SET_NUM', help='the set to run')
-    parser.add_argument('--problem', type=int, metavar='PROBLEM_NUM', help='the problem to run')
+    parser.add_argument('--set', type=int, metavar='SET', help='the set to run')
+    parser.add_argument('--problem', type=int, metavar='PROBLEM', help='the problem to run')
     args = parser.parse_args()
     main(set=args.set, problem=args.problem)
