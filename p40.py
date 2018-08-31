@@ -3,7 +3,7 @@ from binascii import hexlify, unhexlify
 from p39 import RSA, invmod
 
 
-def _kth_root(n, k, rounded=False):
+def kth_root(n, k, rounded=False):
     bits = len(bin(n)[2:])
     mn, mx = (2**(bits / k)), (2**(bits / k + 1))
     mid = (mx + mn) / 2
@@ -52,7 +52,7 @@ def p40():
     t2 = (c2 * m2 * invmod(m2, n2))
     c = (t0 + t1 + t2) % (n0 * n1 * n2)
 
-    m = _kth_root(c, 3)
+    m = kth_root(c, 3)
     m = unhexlify(hex(m)[2:-1])
 
     return 'Recovered message "{}"'.format(m)
