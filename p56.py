@@ -46,7 +46,9 @@ def p56():
             z32_char = max(z32_map.items(), key=itemgetter(1))[0]
             plaintext[z32 - offset] = chr(ord(z32_char) ^ z32_bias)
 
-    return ''.join(plaintext)
+        print ''.join(plaintext)
+
+    return 'Recovered message "{}"'.format(''.join(plaintext))
 
 
 def main():
