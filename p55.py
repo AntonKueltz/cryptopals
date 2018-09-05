@@ -1,6 +1,8 @@
-from binascii import hexlify, unhexlify
+from binascii import hexlify
 from hashlib import new as new_hash
 from os import urandom
+from struct import pack, unpack
+from sys import stdout
 
 
 def _lrot(x, n):
@@ -30,9 +32,7 @@ def _phi0(a, b, c, d, mk, s):
 
 
 def _reverse_phi0(modified, a, b, c, d, s):
-    m = _rrot(modified, s)
-    m = (m - a) & 0xffffffff
-    return (m - _f(b, c, d)) & 0xffffffff
+    return (_rrot(modified, s) - a - _f(b, c, d)) & 0xffffffff
 
 
 def _phi1(a, b, c, d, mk, s):
@@ -41,10 +41,7 @@ def _phi1(a, b, c, d, mk, s):
 
 
 def _reverse_phi1(modified, a, b, c, d, s):
-    m = _rrot(modified, s)
-    m = (m - a) & 0xffffffff
-    m = (m - _g(b, c, d)) & 0xffffffff
-    return (m - 0x5a827999) & 0xffffffff
+    return (_rrot(modified, s) - a - _g(b, c, d) - 0x5a827999) & 0xffffffff
 
 
 def _equal_bit(x, y, i):
@@ -67,9 +64,7 @@ def _set_bit(x, i):
 def _parse_message(M):
     blocks = []
     for i in range(0, 64, 4):
-        block = int(hexlify(M[i:i + 4]), 16)
-        b0, b1, b2, b3 = [(block >> i * 8) & 0xff for i in range(4)]
-        block = b0 << 24 | b1 << 16 | b2 << 8 | b3
+        (block,) = unpack('<L', M[i:i + 4])
         blocks.append(block)
     return blocks
 
@@ -77,13 +72,11 @@ def _parse_message(M):
 def _form_message(blocks):
     s = ''
     for block in blocks:
-        b0, b1, b2, b3 = [(block >> i * 8) & 0xff for i in range(4)]
-        block = b0 << 24 | b1 << 16 | b2 << 8 | b3
-        s += '{:08x}'.format(block)
-    return unhexlify(s)
+        s += pack('<L', block)
+    return s
 
 
-def _update_round1(M, a0, b0, c0, d0):
+def _massage_message(M, a0, b0, c0, d0):
     m = _parse_message(M)
 
     a1 = _phi0(a0, b0, c0, d0, m[0], 3)
@@ -227,12 +220,8 @@ def _update_round1(M, a0, b0, c0, d0):
     b4 = _set_bit(b4, 27)
     b4 = _set_bit(b4, 29)
     b4 = _clear_bit(b4, 30)
-    m[15] = _reverse_phi0(b3, b3, c4, d4, a4, 19)
+    m[15] = _reverse_phi0(b4, b3, c4, d4, a4, 19)
 
-    return m, a4, b4, c4, d4
-
-
-def _update_round2(m, a4, b4, c4, d4):
     a5 = _phi1(a4, b4, c4, d4, m[0], 3)
     a5 = _equal_bit(a5, c4, 19)
     a5 = _set_bit(a5, 26)
@@ -240,6 +229,11 @@ def _update_round2(m, a4, b4, c4, d4):
     a5 = _set_bit(a5, 29)
     a5 = _set_bit(a5, 32)
     m[0] = _reverse_phi1(a5, a4, b4, c4, d4, 3)
+    a1 = _phi0(a0, b0, c0, d0, m[0], 3)
+    m[1] = _reverse_phi0(d1, d0, a1, b0, c0, 7)
+    m[2] = _reverse_phi0(c1, c0, d1, a1, b0, 11)
+    m[3] = _reverse_phi0(b1, b0, c1, d1, a1, 19)
+    m[4] = _reverse_phi0(a2, a1, b1, c1, d1, 3)
 
     d5 = _phi1(d4, a5, b4, c4, m[4], 5)
     d5 = _equal_bit(d5, a5, 19)
@@ -248,24 +242,163 @@ def _update_round2(m, a4, b4, c4, d4):
     d5 = _equal_bit(d5, b4, 29)
     d5 = _equal_bit(d5, b4, 32)
     m[4] = _reverse_phi1(d5, d4, a5, b4, c4, 5)
+    a2_ = _phi0(a1, b1, c1, d1, m[4], 3)
+    m[5] = _reverse_phi0(d2, d1, a2_, b1, c1, 7)
+    m[6] = _reverse_phi0(c2, c1, d2, a2_, b1, 11)
+    m[7] = _reverse_phi0(b2, b1, c2, d2, a2_, 19)
+    m[8] = _reverse_phi0(a3, a2_, b2, c2, d2, 3)
 
-    c5 = _phi1(c4, d5, a5, b4, m[8], 9)
-    c5 = _equal_bit(c5, d5, 26)
-    c5 = _equal_bit(c5, d5, 27)
-    c5 = _equal_bit(c5, d5, 29)
-    c5 = _equal_bit(c5, d5, 30)
-    c5 = _equal_bit(c5, d5, 32)
-    m[8] = _reverse_phi1(c5, c4, d5, a5, b4, 9)
+    return m
 
-    b5 = _phi1(b4, c5, d5, a5, m[12], 13)
-    b5 = _equal_bit(b5, c5, 29)
-    b5 = _set_bit(b5, 30)
-    b5 = _clear_bit(b5, 32)
-    m[12] = _reverse_phi1(b5, b4, c5, d5, a5,  13)
+
+def _check_conditions(m, a, b, c, d):
+    def _set(x, i):
+        assert ((x >> (i - 1)) & 1) == 1
+
+    def _clr(x, i):
+        assert ((x >> (i - 1)) & 1) == 0
+
+    def _eq(x, y, i):
+        assert ((x >> (i - 1)) & 1) == ((y >> (i - 1)) & 1)
+
+    a = _phi0(a, b, c, d, m[0], 3)
+    _eq(a, b, 7)
+    d = _phi0(d, a, b, c, m[1], 7)
+    _clr(d, 7)
+    _eq(d, a, 8)
+    _eq(d, a, 11)
+    c = _phi0(c, d, a, b, m[2], 11)
+    _set(c, 7)
+    _set(c, 8)
+    _clr(c, 11)
+    _eq(c, d, 26)
+    b = _phi0(b, c, d, a, m[3], 19)
+    _set(b, 7)
+    _clr(b, 8)
+    _clr(b, 11)
+    _clr(b, 26)
+
+    a = _phi0(a, b, c, d, m[4], 3)
+    _set(a, 8)
+    _set(a, 11)
+    _clr(a, 26)
+    _eq(a, b, 14)
+    d = _phi0(d, a, b, c, m[5], 7)
+    _clr(d, 14)
+    _eq(d, a, 19)
+    _eq(d, a, 20)
+    _eq(d, a, 21)
+    _eq(d, a, 22)
+    _set(d, 26)
+    c = _phi0(c, d, a, b, m[6], 11)
+    _eq(c, d, 13)
+    _clr(c, 14)
+    _eq(c, d, 15)
+    _clr(c, 19)
+    _clr(c, 20)
+    _set(c, 21)
+    _clr(c, 22)
+    b = _phi0(b, c, d, a, m[7], 19)
+    _set(b, 13)
+    _set(b, 14)
+    _clr(b, 15)
+    _eq(b, c, 17)
+    _clr(b, 19)
+    _clr(b, 20)
+    _clr(b, 21)
+    _clr(b, 22)
+
+    a = _phi0(a, b, c, d, m[8], 3)
+    _set(a, 13)
+    _set(a, 14)
+    _set(a, 15)
+    _clr(a, 17)
+    _clr(a, 19)
+    _clr(a, 20)
+    _clr(a, 21)
+    _eq(a, b, 23)
+    _set(a, 22)
+    _eq(a, b, 26)
+    d = _phi0(d, a, b, c, m[9], 7)
+    _set(d, 13)
+    _set(d, 14)
+    _set(d, 15)
+    _clr(d, 17)
+    _clr(d, 20)
+    _set(d, 21)
+    _set(d, 22)
+    _clr(d, 23)
+    _set(d, 26)
+    _eq(d, a, 30)
+    c = _phi0(c, d, a, b, m[10], 11)
+    _set(c, 17)
+    _clr(c, 20)
+    _clr(c, 21)
+    _clr(c, 22)
+    _clr(c, 23)
+    _clr(c, 26)
+    _set(c, 30)
+    _eq(c, d, 32)
+    b = _phi0(b, c, d, a, m[11], 19)
+    _clr(b, 20)
+    _set(b, 21)
+    _set(b, 22)
+    _eq(b, c, 23)
+    _set(b, 26)
+    _clr(b, 30)
+    _clr(b, 32)
+
+    a = _phi0(a, b, c, d, m[12], 3)
+    _clr(a, 23)
+    _clr(a, 26)
+    _eq(a, b, 27)
+    _eq(a, b, 29)
+    _set(a, 30)
+    _clr(a, 32)
+    d = _phi0(d, a, b, c, m[13], 7)
+    _clr(d, 23)
+    _clr(d, 26)
+    _set(d, 27)
+    _set(d, 29)
+    _clr(d, 30)
+    _set(d, 32)
+    c = _phi0(c, d, a, b, m[14], 11)
+    _eq(c, d, 19)
+    _set(c, 23)
+    _set(c, 26)
+    _clr(c, 27)
+    _clr(c, 29)
+    _clr(c, 30)
+    b = _phi0(b, c, d, a, m[15], 19)
+    _clr(b, 19)
+    _set(b, 26)
+    _eq(b, c, 26)
+    _set(b, 27)
+    _set(b, 29)
+    _clr(b, 30)
+
+    a = _phi1(a, b, c, d, m[0], 3)
+    _eq(a, c, 19)
+    _set(a, 26)
+    _clr(a, 27)
+    _set(a, 29)
+    _set(a, 32)
+    d = _phi1(d, a, b, c, m[4], 5)
+    _eq(d, a, 19)
+    _eq(d, b, 26)
+    _eq(d, b, 27)
+    _eq(d, b, 29)
+    _eq(d, b, 32)
+    c = _phi1(c, d, a, b, m[8], 9)
+    b = _phi1(b, c, d, a, m[12], 13)
 
 
 def _md4_hash(m):
     return new_hash('md4', m).digest()
+
+
+def _format_msg(M):
+    return ' '.join(['{:x}'.format(b) for b in unpack('<LLLLLLLLLLLLLLLL', M)])
 
 
 def p55():
@@ -276,9 +409,11 @@ def p55():
     while not collision:
         i += 1
         if i % 1000 == 0:
-            print i
+            stdout.write('.')
+            stdout.flush()
+
         M = urandom(64)
-        m, a4, b4, c4, d4 = _update_round1(M, a0, b0, c0, d0)
+        m = _massage_message(M, a0, b0, c0, d0)
 
         m_ = m[:]
         m_[1] = (m[1] + 2 ** 31) & 0xffffffff
@@ -291,7 +426,7 @@ def p55():
         collision = _md4_hash(M) == _md4_hash(M_)
 
     return 'Found MD4 collision for messages\nM = {}\nM\' = {}\nh = {}'.format(
-        hexlify(M), hexlify(M_), hexlify(_md4_hash(M_)))
+        _format_msg(M), _format_msg(M_), hexlify(_md4_hash(M_)))
 
 
 def main():

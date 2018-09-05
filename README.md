@@ -42,4 +42,4 @@ mimic calling an actual server.
 * Set 4 ✓ [8/8 complete]
 * Set 5 ✓ [8/8 complete]
 * Set 6 ✓ [8/8 complete]
-* Set 7 ✗ [7/8 complete]
+* Set 7 ✓ [8/8 complete]
