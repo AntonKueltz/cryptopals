@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from argparse import ArgumentParser
 from importlib import import_module
@@ -10,9 +10,11 @@ class Solution:
         self.solver = solver
 
     def __call__(self):
-        print '\033[94m[' + self.title + ']\033[0m'
-        result = str(self.solver()).rstrip()
-        print result + '\n'
+        print(f'\033[94m[{self.title}]\033[0m')
+        result = self.solver()
+        result = result.decode() if isinstance(result, bytes) else str(result)
+        result = result.rstrip()
+        print(f'{result}\n')
 
 
 def main(set=None, problem=None):
