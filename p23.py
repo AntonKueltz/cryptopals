@@ -1,9 +1,10 @@
 from random import randint
 
+from main import Solution
 from p21 import MersenneTwister
 
 
-def _untemper(mt_out):
+def _untemper(mt_out: int) -> int:
     y = mt_out
 
     tmp1 = y & 0xffffc000
@@ -29,20 +30,20 @@ def _untemper(mt_out):
     return y
 
 
-def p23():
+def p23() -> str:
     seed = randint(0x10000000, 0xffffffff)
     mt = MersenneTwister(seed)
     output = [mt.extract() for _ in range(624)]
-    print 'MT output - {}...'.format(', '.join(map(str, output[:5])))
+    print(f'MT output - {", ".join(map(str, output[:5]))}...')
 
-    untempered = map(_untemper, output)
+    untempered = [state for state in map(_untemper, output)]
     clone = MersenneTwister(0)
     clone.MT = untempered
+    clone._generate = lambda: None
     cloned_output = [clone.extract() for _ in range(624)]
 
-    return 'Clone output - {}...'.format(', '.join(map(str, output[:5])))
+    return f'Clone output - {", ".join(map(str, cloned_output[:5]))}...'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('23: Clone an MT19937 RNG from its output', p23)
