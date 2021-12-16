@@ -1,45 +1,35 @@
 from hmac import compare_digest
 from os import urandom
 
+from main import Solution
+
 
 class MerkleDamgardHash(object):
     def __init__(self):
-        self.BLOCKSIZE = 512 / 8
+        self.BLOCKSIZE = 512 // 8
 
-    def word(self, str32bit):
-        w = 0
-        degree = 0
-
-        while str32bit != '':
-            byt = str32bit[-1]
-            w += ord(byt) * (0xff+1)**degree
-            degree += 1
-            str32bit = str32bit[:-1]
-
-        return w
-
-    def rotateleft(self, int32bit, amt):
+    def rotateleft(self, int32bit: int, amt: int) -> int:
         mask = 0
         for i in range(amt):
             mask |= 2**i
         rotated = (int32bit << amt) | ((int32bit >> (32 - amt)) & mask)
         return rotated & 0xffffffff
 
-    def pad(self, msg):
+    def pad(self, msg: bytes) -> bytes:
         msglen = len(msg)
         msgbits = (msglen * 8) % (2**64)
 
-        padstring = chr(0x80)
+        padstring = b'\x80'
 
-        hexlen = ''
+        hexlen = b''
         while msgbits > 0:
-            hexlen = chr(msgbits % (0xff + 1)) + hexlen
-            msgbits /= (0xff + 1)
+            hexlen = bytes([msgbits % (0xff + 1)]) + hexlen
+            msgbits //= (0xff + 1)
 
-        while (msglen + len(padstring)) % self.BLOCKSIZE != (448 / 8):
-            padstring += '\x00'
+        while (msglen + len(padstring)) % self.BLOCKSIZE != (448 // 8):
+            padstring += b'\x00'
 
-        padstring += (8 - len(hexlen)) * '\x00' + hexlen
+        padstring += (8 - len(hexlen)) * b'\x00' + hexlen
         return msg + padstring
 
 
@@ -54,7 +44,7 @@ class SHA1(MerkleDamgardHash):
             self.backdoor = backdoor
             self.h = self.backdoor[:]
 
-    def pad(self, msg):
+    def pad(self, msg: bytes) -> bytes:
         msglen = len(msg)
         msgbits = msglen * 8
         if msgbits > self.MAX_MSG_LEN:
@@ -62,15 +52,17 @@ class SHA1(MerkleDamgardHash):
         else:
             return super(SHA1, self).pad(msg)
 
-    def hash(self, msg):
-        msg = str(msg)
+    def hash(self, msg: bytes) -> bytes:
         padded = self.pad(msg)
-        blocks = len(padded) / self.BLOCKSIZE
+        blocks = len(padded) // self.BLOCKSIZE
 
         for block in range(blocks):
             chunk = padded[block*self.BLOCKSIZE:(block+1)*self.BLOCKSIZE]
 
-            w = map(self.word, [chunk[i*4:(i+1)*4] for i in range(16)])
+            w = [x for x in map(
+                lambda word: int.from_bytes(word, byteorder='big'),
+                [chunk[i*4:(i+1)*4] for i in range(16)]
+            )]
             for i in range(16, 80):
                 neww = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16])
                 neww = self.rotateleft(neww, 1)
@@ -109,34 +101,33 @@ class SHA1(MerkleDamgardHash):
                   (self.h[3] << 32) | self.h[4])
         self.h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xC3d2e1f0]
 
-        return hex(hashed)[2:-1]
+        return int.to_bytes(hashed, 20, byteorder='big')
 
 
-def sha1mac(key, msg):
+def sha1mac(key: bytes, msg: bytes) -> bytes:
     sha = SHA1()
     mac = sha.hash(key + msg)
     return mac
 
 
-def p28():
-    msg = 'Some super secret thing I dont want to share'
+def p28() -> str:
+    msg = b'Some super secret thing I dont want to share'
     key = urandom(16)
     auth = sha1mac(key, msg)
 
     assert compare_digest(auth, sha1mac(key, msg)) is True
-    print 'Correct MAC accepted'
+    print('Correct MAC accepted')
 
     badauth = sha1mac(urandom(16), msg)
     assert compare_digest(badauth, sha1mac(key, msg)) is False
-    print 'Tampered MAC rejected'
+    print('Tampered MAC rejected')
 
-    badmsg = 'I didnt write this'
+    badmsg = b'I didnt write this'
     assert compare_digest(badauth, sha1mac(key, badmsg)) is False
-    print 'Tampered message rejected'
+    print('Tampered message rejected')
 
     return 'All Tests Passed!'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('28: Implement a SHA-1 keyed MAC', p28)

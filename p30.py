@@ -1,3 +1,4 @@
+from binascii import hexlify
 from hmac import compare_digest
 from os import urandom
 
@@ -7,21 +8,17 @@ from p28 import MerkleDamgardHash
 class MD4(MerkleDamgardHash):
     def __init__(self, backdoored=False, backdoor=None):
         super(MD4, self).__init__()
-        self.h = [0x67452301, 0xefcdab89, 0x9badcfe, 0x10325476]
+        self.h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
         self.X = None
         self.backdoored = backdoored
 
         if self.backdoored:
             self.backdoor = backdoor
-            self.h = map(self.low_bytes_to_high, self.backdoor)
+            self.h = self.backdoor[:]
 
-    def pad(self, msg):
+    def pad(self, msg: bytes) -> bytes:
         padded = super(MD4, self).pad(msg)
         return padded[:-8] + padded[-8:][::-1]
-
-    def low_bytes_to_high(self, int32):
-        b0, b1, b2, b3 = [(int32 >> i * 8) & 0xff for i in range(4)]
-        return b0 << 24 | b1 << 16 | b2 << 8 | b3
 
     @staticmethod
     def f(x, y, z):
@@ -41,26 +38,27 @@ class MD4(MerkleDamgardHash):
 
     def round2(self, a, b, c, d, i, s):
         tmp = self.h[a] + MD4.g(self.h[b], self.h[c], self.h[d]) + self.X[i]
-        tmp = (tmp + 0x5a827999) & 0xffffffff
+        tmp = (tmp + 0o13240474631) & 0xffffffff
         self.h[a] = self.rotateleft(tmp, s)
 
     def round3(self, a, b, c, d, i, s):
         tmp = self.h[a] + MD4.h(self.h[b], self.h[c], self.h[d]) + self.X[i]
-        tmp = (tmp + 0x6ed9eba1) & 0xffffffff
+        tmp = (tmp + 0o15666365641) & 0xffffffff
         self.h[a] = self.rotateleft(tmp, s)
 
-    def hash(self, msg):
-        msg = str(msg)
+    def hash(self, msg: bytes) -> bytes:
         padded = self.pad(msg)
-        blocks = len(padded) / self.BLOCKSIZE
+        blocks = len(padded) // self.BLOCKSIZE
 
         for i in range(blocks):
             chunk = padded[i*self.BLOCKSIZE:(i+1)*self.BLOCKSIZE]
-            self.X = map(self.word, [chunk[j*4:(j+1)*4] for j in range(16)])
-            self.X = map(self.low_bytes_to_high, self.X)
+            self.X = [x for x in map(
+                lambda word: int.from_bytes(word, byteorder='big'),
+                [chunk[j*4:(j+1)*4] for j in range(16)]
+            )]
 
             if self.backdoored:
-                self.h = map(self.low_bytes_to_high, self.backdoor)
+                self.h = self.backdoor[:]
 
             AA, BB, CC, DD = self.h
 
@@ -129,44 +127,45 @@ class MD4(MerkleDamgardHash):
             self.h[2] = (self.h[2] + CC) & 0xffffffff
             self.h[3] = (self.h[3] + DD) & 0xffffffff
 
-        hashed = ((self.low_bytes_to_high(self.h[0]) << 96) |
-                  (self.low_bytes_to_high(self.h[1]) << 64) |
-                  (self.low_bytes_to_high(self.h[2]) << 32) |
-                  self.low_bytes_to_high(self.h[3]))
+        hashed = ((self.h[3] << 96) |
+                  (self.h[2] << 64) |
+                  (self.h[1] << 32) |
+                   self.h[0])
         self.h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
 
-        return hex(hashed)[2:-1]
+        return int.to_bytes(hashed, 16, byteorder='little')
 
 
-def _md4mac(key, msg):
+def _md4mac(key: bytes, msg: bytes) -> bytes:
     md4 = MD4()
     mac = md4.hash(key + msg)
     return mac
 
 
-def p30():
-    msg = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound' \
-          '%20of%20bacon'
+def p30() -> str:
+    msg = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound' \
+          b'%20of%20bacon'
     key = urandom(16)
     auth = _md4mac(key, msg)
 
     msglen = len(msg) + len(key)
-    dummy = '\x00' * msglen
+    dummy = b'\x00' * msglen
     m = MD4()
     glue = m.pad(dummy)[msglen:]
 
     hs = []
-    authval = int(auth, 16)
+    authval = int.from_bytes(auth, byteorder='little')
     while authval:
-        hs = [int(authval & 0xffffffff)] + hs
+        hs.append(int(authval & 0xffffffff))
         authval = authval >> 32
 
-    inject = ';admin=true'
+    inject = b';admin=true'
     tampered = MD4(backdoored=True, backdoor=hs)
     forged = tampered.hash(dummy + glue + inject)
 
     if compare_digest(forged, _md4mac(key, msg + glue + inject)):
-        return 'Message: {}\nMAC: {}'.format(msg + glue + inject, forged)
+        return f'Message: {msg + glue + inject}\n' \
+               f'MAC: {hexlify(forged).decode()}'
     else:
         return 'Message Forgery Failed'
 
