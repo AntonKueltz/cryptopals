@@ -1,12 +1,14 @@
 from binascii import hexlify, unhexlify
+from typing import Optional
 
+from main import Solution
 from p39 import RSA, invmod
 
 
-def kth_root(n, k, rounded=False):
+def kth_root(n: int, k: int, rounded: bool = False) -> Optional[int]:
     bits = len(bin(n)[2:])
-    mn, mx = (2**(bits / k)), (2**(bits / k + 1))
-    mid = (mx + mn) / 2
+    mn, mx = (2**(bits // k)), (2**(bits // k + 1))
+    mid = (mx + mn) // 2
     guess = mid**k
 
     while guess != n:
@@ -17,7 +19,7 @@ def kth_root(n, k, rounded=False):
         else:
             mx = mid
 
-        mid = (mx + mn) / 2
+        mid = (mx + mn) // 2
 
         if mid**k == guess:
             if rounded:
@@ -30,10 +32,10 @@ def kth_root(n, k, rounded=False):
     return mid
 
 
-def p40():
-    msg = 'Assume you\'re a Javascript programmer. That is, you\'re using a naive handrolled ' \
-          'RSA to encrypt without padding.'
-    print 'Encrypting secret message "{}"'.format(msg)
+def p40() -> str:
+    msg = b'Assume you\'re a Javascript programmer. That is, you\'re using a naive handrolled ' \
+          b'RSA to encrypt without padding.'
+    print(f'Encrypting secret message "{msg.decode()}"')
     msg = int(hexlify(msg), 16)
 
     pairs = []
@@ -41,7 +43,7 @@ def p40():
         rsa = RSA()
         c = rsa.enc(msg)
         pairs.append((c, rsa.N))
-        print 'Generated ciphertext = {}... for N = {}...'.format(str(c)[:15], str(rsa.N)[:15])
+        print(f'Generated ciphertext = {str(c)[:15]}... for N = {str(rsa.N)[:15]}...')
 
     c0, c1, c2 = [c for (c, _) in pairs]
     n0, n1, n2 = [N for (c, N) in pairs]
@@ -53,11 +55,10 @@ def p40():
     c = (t0 + t1 + t2) % (n0 * n1 * n2)
 
     m = kth_root(c, 3)
-    m = unhexlify(hex(m)[2:-1])
+    m = unhexlify(hex(m)[2:])
 
-    return 'Recovered message "{}"'.format(m)
+    return f'Recovered message "{m.decode()}"'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('40: Implement an E=3 RSA Broadcast attack', p40)

@@ -1,15 +1,17 @@
-from fractions import gcd
+from math import gcd
 
-from Crypto.Util.number import getPrime
+from main import Solution
+
+from Crypto.Util.number import getPrime, getRandomInteger
 
 
-def invmod(n, mod):
+def invmod(n: int, mod: int) -> int:
     n = n % mod
     t, newt = 0, 1
     r, newr = mod, n
 
     while newr != 0:
-        q = r / newr
+        q = r // newr
         tmp1, tmp2 = t, r
 
         t = newt
@@ -26,33 +28,32 @@ def invmod(n, mod):
 
 
 class RSA:
-    def __init__(self, bitsize=1024):
+    def __init__(self, bitsize: int = 1024):
         self.e = 3
-        p, q = getPrime(bitsize / 2), getPrime(bitsize / 2)
+        p, q = getPrime(bitsize // 2), getPrime(bitsize // 2)
         phi, self.N = (p - 1) * (q - 1), p * q
 
         while gcd(phi, self.e) != 1:
-            p, q = getPrime(bitsize / 2), getPrime(bitsize / 2)
+            p, q = getPrime(bitsize // 2), getPrime(bitsize // 2)
             phi, self.N = (p - 1) * (q - 1), p * q
 
         self._d = invmod(self.e, phi)
 
-    def enc(self, m):
+    def enc(self, m: int) -> int:
         return pow(m, self.e, self.N)
 
-    def dec(self, c, tostr=False):
+    def dec(self, c: int) -> int:
         return pow(c, self._d, self.N)
 
 
-def p39():
-    m = 42
+def p39() -> str:
+    m = getRandomInteger(31)
     rsa = RSA(bitsize=32)
-    print 'Initialized 32 bit RSA: e = {}, N = {}'.format(rsa.e, rsa.N)
+    print(f'Initialized 32 bit RSA: e = {rsa.e}, N = {rsa.N}')
     c = rsa.enc(m)
-    print 'Enc({}) = {}'.format(m, c)
-    return 'Dec({}) = {}'.format(c, rsa.dec(c))
+    print(f'Enc({m}) = {c}')
+    return f'Dec({c}) = {rsa.dec(c)}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('39: Implement RSA', p39)
