@@ -1,8 +1,10 @@
 from hashlib import sha1
+from typing import Optional
+
+from main import Solution
+from p39 import invmod
 
 from Crypto.Random.random import randint
-
-from p39 import invmod
 
 
 class DSA():
@@ -28,7 +30,7 @@ class DSA():
         self.x = randint(1, self.q - 1)
         self.y = pow(self.g, self.x, self.p)
 
-    def sign(self, m):
+    def sign(self, m: bytes) -> (int, int):
         r, s = 0, 0
 
         k = randint(1, self.q - 1)
@@ -37,9 +39,9 @@ class DSA():
         hash_int = int(sha1(m).hexdigest(), 16)
         s = (invmod(k, self.q) * (hash_int + self.x * r)) % self.q
 
-        return (r, s)
+        return r, s
 
-    def verify(self, m, r, s):
+    def verify(self, m:  bytes, r: int, s: int) -> bool:
         w = invmod(s, self.q)
         u1 = (int(sha1(m).hexdigest(), 16) * w) % self.q
         u2 = (r * w) % self.q
@@ -51,7 +53,7 @@ class DSA():
         return v == r
 
 
-def p43():
+def p43() -> Optional[str]:
     dsa = DSA()
     y = int(
         '84ad4719d044495496a3201c8ff484feb45b962e7302e56a392aee4'
@@ -61,8 +63,8 @@ def p43():
         'bb283e6633451e535c45513b2d33c99ea17', 16
     )
 
-    m = 'For those that envy a MC it can be hazardous to your health\n' \
-        'So be friendly, a matter of life and death, just like a etch-a-sketch\n'
+    m = b'For those that envy a MC it can be hazardous to your health\n' \
+        b'So be friendly, a matter of life and death, just like a etch-a-sketch\n'
     mhash = int(sha1(m).hexdigest(), 16)
     r = 548099063082341131477253921760299949438196259240
     s = 857042759984254168557880549501802188789837994940
@@ -72,11 +74,10 @@ def p43():
     for k in range(2**16):
         x = (((s * k) - mhash) * invmod(r, dsa.q)) % dsa.q
 
-        if sha1(hex(x)[2:-1]).hexdigest() == fingerprint:
+        if sha1(hex(x)[2:].encode()).hexdigest() == fingerprint:
             assert y == pow(dsa.g, x, dsa.p)
-            return 'Private DSA key is {}'.format(x)
+            return f'Private DSA key is {x}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('43: DSA key recovery from nonce', p43)

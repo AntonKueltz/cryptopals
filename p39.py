@@ -30,7 +30,12 @@ def invmod(n: int, mod: int) -> int:
 class RSA:
     def __init__(self, bitsize: int = 1024):
         self.e = 3
+        self.bitsize = bitsize
+
         p, q = getPrime(bitsize // 2), getPrime(bitsize // 2)
+        while int.bit_length(p * q) != bitsize:
+            p, q = getPrime(bitsize // 2), getPrime(bitsize // 2)
+
         phi, self.N = (p - 1) * (q - 1), p * q
 
         while gcd(phi, self.e) != 1:
