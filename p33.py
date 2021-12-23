@@ -1,3 +1,5 @@
+from main import Solution
+
 from Crypto.Random.random import randint
 
 
@@ -13,30 +15,29 @@ class DiffieHellman():
         'fffffffffffff', 16
     )
 
-    def __init__(self, p=default_p, g=2):
+    def __init__(self, p: int = default_p, g: int = 2):
         self.p = p
         self.g = g
         self.secret = randint(0, p-1)
         self.public = pow(g, self.secret, p)
         self.shared = None
 
-    def derive_shared_secret(self, B):
+    def derive_shared_secret(self, B: int):
         self.shared = pow(B, self.secret, self.p)
 
 
-def p33():
-    print 'Using DH params p=37 g=5'
+def p33() -> str:
+    print('Using DH params p=37 g=5')
     alice = DiffieHellman(p=37, g=5)
     bob = DiffieHellman(p=37, g=5)
 
-    print 'Alice\'s DH keys are\n  public: {}\n  secret: {}'.format(alice.public, alice.secret)
-    print 'Bob\'s DH keys are\n  public: {}\n  secret: {}'.format(bob.public, bob.secret)
+    print(f'Alice\'s DH keys are\n  public: {alice.public}\n  secret: {alice.secret}')
+    print(f'Bob\'s DH keys are\n  public: {bob.public}\n  secret: {bob.secret}')
 
     alice.derive_shared_secret(bob.public)
     bob.derive_shared_secret(alice.public)
-    return 'Alice derived {}\nBob derived {}'.format(alice.shared, bob.shared)
+    return f'Alice derived {alice.shared}\nBob derived {bob.shared}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('33: Implement Diffie-Hellman', p33)

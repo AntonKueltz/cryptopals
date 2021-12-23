@@ -3,9 +3,12 @@ from hashlib import new as new_hash
 from os import urandom
 from struct import pack, unpack
 from sys import stdout
+from typing import List
+
+from main import Solution
 
 
-def _lrot(x, n):
+def _lrot(x: int, n: int) -> int:
     mask = 0
     for i in range(n):
         mask |= 2**i
@@ -13,55 +16,55 @@ def _lrot(x, n):
     return rotated & 0xffffffff
 
 
-def _rrot(x, n):
-    rotated = (x >> n) | ((x << (32 - n)))
+def _rrot(x: int, n: int) -> int:
+    rotated = (x >> n) | (x << (32 - n))
     return rotated & 0xffffffff
 
 
-def _f(x, y, z):
+def _f(x: int, y: int, z: int) -> int:
     return (x & y) | (~x & z)
 
 
-def _g(x, y, z):
+def _g(x: int, y: int, z: int) -> int:
     return (x & y) | (x & z) | (y & z)
 
 
-def _phi0(a, b, c, d, mk, s):
+def _phi0(a: int, b: int, c: int, d: int, mk: int, s: int) -> int:
     tmp = (a + _f(b, c, d) + mk) & 0xffffffff
     return _lrot(tmp, s)
 
 
-def _reverse_phi0(modified, a, b, c, d, s):
+def _reverse_phi0(modified: int, a: int, b: int, c: int, d: int, s: int) -> int:
     return (_rrot(modified, s) - a - _f(b, c, d)) & 0xffffffff
 
 
-def _phi1(a, b, c, d, mk, s):
+def _phi1(a: int, b: int, c: int, d: int, mk: int, s: int) -> int:
     tmp = (a + _g(b, c, d) + mk + 0x5a827999) & 0xffffffff
     return _lrot(tmp, s)
 
 
-def _reverse_phi1(modified, a, b, c, d, s):
+def _reverse_phi1(modified: int, a: int, b: int, c: int, d: int, s: int) -> int:
     return (_rrot(modified, s) - a - _g(b, c, d) - 0x5a827999) & 0xffffffff
 
 
-def _equal_bit(x, y, i):
+def _equal_bit(x: int, y: int, i: int) -> int:
     shift = i - 1
     xi, yi = (x >> shift) & 1, (y >> shift) & 1
     return x ^ ((xi ^ yi) << shift)
 
 
-def _clear_bit(x, i):
+def _clear_bit(x: int, i: int) -> int:
     shift = i - 1
     xi = (x >> shift) & 1
     return x ^ (xi << shift)
 
 
-def _set_bit(x, i):
+def _set_bit(x: int, i: int) -> int:
     shift = i - 1
     return x | (1 << shift)
 
 
-def _parse_message(M):
+def _parse_message(M: bytes) -> List[int]:
     blocks = []
     for i in range(0, 64, 4):
         (block,) = unpack('<L', M[i:i + 4])
@@ -69,14 +72,14 @@ def _parse_message(M):
     return blocks
 
 
-def _form_message(blocks):
-    s = ''
+def _form_message(blocks: List[int]) -> bytes:
+    s = b''
     for block in blocks:
         s += pack('<L', block)
     return s
 
 
-def _massage_message(M, a0, b0, c0, d0):
+def _massage_message(M: bytes, a0: int, b0: int, c0: int, d0: int) -> List[int]:
     m = _parse_message(M)
 
     a1 = _phi0(a0, b0, c0, d0, m[0], 3)
@@ -251,14 +254,14 @@ def _massage_message(M, a0, b0, c0, d0):
     return m
 
 
-def _check_conditions(m, a, b, c, d):
-    def _set(x, i):
+def _check_conditions(m: List[int], a: int, b: int, c: int, d: int):
+    def _set(x: int, i: int):
         assert ((x >> (i - 1)) & 1) == 1
 
-    def _clr(x, i):
+    def _clr(x: int, i: int):
         assert ((x >> (i - 1)) & 1) == 0
 
-    def _eq(x, y, i):
+    def _eq(x: int, y: int, i: int):
         assert ((x >> (i - 1)) & 1) == ((y >> (i - 1)) & 1)
 
     a = _phi0(a, b, c, d, m[0], 3)
@@ -393,15 +396,15 @@ def _check_conditions(m, a, b, c, d):
     b = _phi1(b, c, d, a, m[12], 13)
 
 
-def _md4_hash(m):
+def _md4_hash(m: bytes):
     return new_hash('md4', m).digest()
 
 
-def _format_msg(M):
-    return ' '.join(['{:x}'.format(b) for b in unpack('<LLLLLLLLLLLLLLLL', M)])
+def _format_msg(M: bytes) -> str:
+    return ' '.join([f'{b:x}' for b in unpack('<LLLLLLLLLLLLLLLL', M)])
 
 
-def p55():
+def p55() -> str:
     collision = False
     a0, b0, c0, d0 = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
 
@@ -425,10 +428,11 @@ def p55():
 
         collision = _md4_hash(M) == _md4_hash(M_)
 
-    return 'Found MD4 collision for messages\nM = {}\nM\' = {}\nh = {}'.format(
-        _format_msg(M), _format_msg(M_), hexlify(_md4_hash(M_)))
+    return f'Found MD4 collision for messages\n' \
+           f'M = {_format_msg(M)}\n' \
+           f'M\' = {_format_msg(M_)}\n' \
+           f'h = {hexlify(_md4_hash(M_)).decode()}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('55: MD4 Collisions', p55)

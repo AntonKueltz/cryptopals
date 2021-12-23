@@ -2,6 +2,7 @@ from base64 import b64decode
 from os import urandom
 from random import choice as random_choice
 
+from main import Solution
 from p02 import xor
 from p10 import aes_cbc_decrypt
 from p11 import aes_cbc_encrypt
@@ -10,20 +11,21 @@ from p13 import validate_pkcs7
 from Crypto.Cipher import AES
 
 
-def _break_cbc(ctxt, key, iv):
-    ptxt = ''
+def _break_cbc(ctxt: bytes, key: bytes, iv: bytes) -> bytes:
+    ptxt = b''
     prevblock = iv
 
-    for block in range(len(ctxt) / AES.block_size):
+    for block in range(len(ctxt) // AES.block_size):
         ctxtblock = ctxt[block * AES.block_size:(block + 1) * AES.block_size]
-        cipherout = ''
+        cipherout = b''
 
         for cur_pad_byte in range(1, AES.block_size+1):
-            mask = ''.join([chr(cur_pad_byte ^ ord(s)) for s in cipherout])
+            mask = bytes([(cur_pad_byte ^ s) for s in cipherout])
 
-            for byt in range(0xff + 1):
+            for byte in range(0xff + 1):
                 validpad = True
-                block = 'A' * (AES.block_size - len(mask) - 1) + chr(byt) + mask
+                byte_str = int.to_bytes(byte, 1, byteorder='little')
+                block = b'A' * (AES.block_size - len(mask) - 1) + byte_str + mask
                 out = aes_cbc_decrypt(ctxtblock, key, block)
 
                 # server would be doing this
@@ -34,7 +36,8 @@ def _break_cbc(ctxt, key, iv):
 
                 # back to client now
                 if validpad:
-                    cipherout = chr(byt ^ cur_pad_byte) + cipherout
+                    cipher_byte = int.to_bytes(byte ^ cur_pad_byte, 1, byteorder='little')
+                    cipherout = cipher_byte + cipherout
                     break
 
         ptxt += xor(prevblock, cipherout)
@@ -43,7 +46,7 @@ def _break_cbc(ctxt, key, iv):
     return ptxt
 
 
-def p17():
+def p17() -> bytes:
     strs = [
         'MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
         'MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB'
@@ -67,6 +70,5 @@ def p17():
     return validate_pkcs7(ptxt)
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('17: The CBC padding oracle', p17)

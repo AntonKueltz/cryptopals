@@ -1,7 +1,10 @@
+from main import Solution
+
+
 class MersenneTwister():
-    def __init__(self, seed):
+    def __init__(self, seed: int):
         self.idx = 0
-        self.MT = range(624)
+        self.MT = [i for i in range(624)]
         self.MT[0] = seed
 
         for i in range(1, 624):
@@ -16,7 +19,7 @@ class MersenneTwister():
             if y % 2:
                 self.MT[i] = self.MT[i] ^ 2567483615
 
-    def extract(self):
+    def extract(self) -> int:
         if self.idx == 0:
             self._generate()
 
@@ -30,13 +33,12 @@ class MersenneTwister():
         return y & 0xffffffff
 
 
-def p21():
+def p21() -> str:
     mt = MersenneTwister(0)
     out = [str(mt.extract()) for _ in range(5)]
 
-    return 'PRNG output - {}'.format(', '.join(out))
+    return f'PRNG output - {", ".join(out)}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('21: Implement the MT19937 Mersenne Twister RNG', p21)

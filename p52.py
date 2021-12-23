@@ -1,17 +1,18 @@
 from binascii import hexlify
+from os import urandom
+from typing import List
 
 from p09 import pkcs7
 
 from Crypto.Cipher import AES
 
 
-def mdhash(m, h, nopadding=False):
+def mdhash(m: bytes, h: bytes, nopadding: bool = False) -> bytes:
     state_size = len(h)
-    m = str(m)
     if not nopadding:
         m = pkcs7(m)
 
-    for block in range(len(m) / AES.block_size):
+    for block in range(len(m) // AES.block_size):
         cipher = AES.new(pkcs7(h), AES.MODE_ECB)
         start = block * AES.block_size
         end = start + AES.block_size
@@ -20,23 +21,23 @@ def mdhash(m, h, nopadding=False):
     return h
 
 
-def _find_collision(m, h):
+def _find_collision(m: bytes, h: bytes) -> (bytes, bytes, bytes):
     lookup = {}
 
     hashed = mdhash(m, h)
     while hashed not in lookup:
         lookup[hashed] = m
-        m += 1
+        m = urandom(15)
         hashed = mdhash(m, h)
 
-    return str(m), str(lookup[hashed]), hashed
+    return m, lookup[hashed], hashed
 
 
-def _generate_collisions(n, start):
-    h = '\x00\x00'
+def _generate_collisions(n: int, start: bytes) -> List[bytes]:
+    h = b'\x00\x00'
     collisions = []
 
-    for level in xrange(n):
+    for _ in range(n):
         prev_collisions = collisions[:]
         s1, s2, hashed = _find_collision(start, h)
 
@@ -51,30 +52,30 @@ def _generate_collisions(n, start):
     return collisions
 
 
-def p52():
+def p52() -> str:
     expensive_size = 4
-    expensive_state = '\x00' * expensive_size
-    start = 0
+    expensive_state = b'\x00' * expensive_size
+    start = urandom(15)
 
     while True:
         lookup = {}
         collisions = _generate_collisions(expensive_size * 4, start)
-        print 'Generated {} collisions...'.format(len(collisions))
+        print(f'Generated {len(collisions)} collisions...')
 
         for m in collisions:
             h = mdhash(m, expensive_state)
 
             if h in lookup:
                 collision = lookup[h]
-                assert mdhash(m, '\x00\x00') == mdhash(collision, '\x00\x00')
-                return 'Found collision for values {} and {}, hash = {}'.format(
-                    hexlify(m), hexlify(collision), hexlify(h))
+                assert mdhash(m, b'\x00\x00') == mdhash(collision, b'\x00\x00')
+                assert m != collision
+                return f'Found collision for values\n{hexlify(m).decode()}\n' \
+                       f'and\n{hexlify(collision).decode()}\n' \
+                       f'hash = {hexlify(h).decode()}'
             else:
                 lookup[h] = m
 
-        start += 100000
-
-    return 'No collisions found'
+        start = urandom(15)
 
 
 def main():

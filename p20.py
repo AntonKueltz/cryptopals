@@ -5,25 +5,25 @@ from p18 import aes_ctr
 from p19 import get_key
 
 
-def p20():
+def p20() -> bytes:
     key = urandom(16)
     ctxts = []
 
-    with open('Data/20.txt') as f:
+    with open('Data/20.txt', 'rb') as f:
         for line in f.readlines():
             ptxt = b64decode(line)
             ctxts.append(aes_ctr(ptxt, key, 0))
 
-    keystream = ''
-    for i in range(max(map(len, ctxts))):
-        keystream += get_key([(c[i] if i < len(c) else '') for c in ctxts])
+    keystream = b''
+    for i in range(min(map(len, ctxts))):
+        keystream += get_key([c[i] for c in ctxts])
 
-    ptxt = ''
+    ptxt = []
     for ctxt in ctxts:
-        raw = [chr(ord(c) ^ ord(k)) for (c, k) in zip(ctxt, keystream)]
-        ptxt += ''.join(raw) + '\n'
+        raw = [c ^ k for (c, k) in zip(ctxt, keystream)]
+        ptxt.append(bytes(raw))
 
-    return ptxt[:-1]
+    return b'\n'.join(ptxt)
 
 
 def main():

@@ -1,24 +1,25 @@
 from base64 import b64decode
 
+from main import Solution
 from p02 import xor
 
 from Crypto.Cipher import AES
 
 
-def _format_64bit(n):
-    byts, hx = 0, ''
+def _format_64bit(n: int) -> bytes:
+    byts, hx = 0, b''
 
     while n:
-        hx += chr(n % 2**8)
-        n /= 2**8
+        hx += int.to_bytes(n % 2**8, 1, byteorder='little')
+        n //= 2**8
         byts += 1
 
-    hx += chr(0) * (8 - byts)
+    hx += b'\x00' * (8 - byts)
     return hx
 
 
-def aes_ctr(intxt, key, nonce=0):
-    outtxt = ''
+def aes_ctr(intxt: bytes, key: bytes, nonce: int = 0) -> bytes:
+    outtxt = b''
     count = 0
     cipher = AES.new(key, AES.MODE_ECB)
 
@@ -33,13 +34,12 @@ def aes_ctr(intxt, key, nonce=0):
     return outtxt
 
 
-def p18():
-    text = 'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX' \
-           '0KSvoOLSFQ=='
-    key = 'YELLOW SUBMARINE'
+def p18() -> bytes:
+    text = b'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX' \
+           b'0KSvoOLSFQ=='
+    key = b'YELLOW SUBMARINE'
     return aes_ctr(b64decode(text), key)
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('18: Implement CTR, the stream cipher mode', p18)

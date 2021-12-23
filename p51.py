@@ -1,22 +1,24 @@
 from os import urandom
 from zlib import compress
 
+from main import Solution
 from p11 import aes_cbc_encrypt
 
 
-def _detect_compressed_size(ptxt):
+def _detect_compressed_size(ptxt: bytes) -> int:
     key, iv = urandom(16), urandom(16)
-    request = 'POST / HTTP/1.1\n' \
-              'Host: hapless.com\n' \
-              'Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE=\n' \
-              'Content-Length: {}\n{}'.format(len(ptxt), ptxt)
+    request = f'POST / HTTP/1.1\n' \
+              f'Host: hapless.com\n' \
+              f'Cookie: sessionid=TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE=\n' \
+              f'Content-Length: {len(ptxt)}\n'
+    request = request.encode() + ptxt
 
     ctxt = aes_cbc_encrypt(compress(request), key, iv)
     return len(ctxt)
 
 
-def _calc_padding(content):
-    padding = 'ABCDEFGHIJKLMNOP'
+def _calc_padding(content: bytes) -> bytes:
+    padding = b'ABCDEFGHIJKLMNOP'
     curlen = _detect_compressed_size(content)
     i = 0
 
@@ -26,16 +28,18 @@ def _calc_padding(content):
     return padding[:i-1]
 
 
-def p51():
-    content = 'sessionid='
-    shortest = ['']
+def p51() -> str:
+    content = b'sessionid='
+    shortest = [b'']
 
     while True:
         minlen = 1000000
         round_shortest = []
         padding = _calc_padding(content + shortest[0])
 
-        for guess in map(chr, range(0xff + 1)):
+        for guess in range(0xff + 1):
+            guess = int.to_bytes(guess, 1, byteorder='big')
+
             for cand in shortest:
                 intxt = padding + content + cand + guess
                 length = _detect_compressed_size(intxt)
@@ -48,10 +52,9 @@ def p51():
 
         shortest = round_shortest[:]
 
-        if len(shortest) == 1 and shortest[0][-1] == '\n':
-            return 'Session id = {}'.format(shortest[0][:-1])
+        if len(shortest) == 1 and shortest[0][-1] == ord('\n'):
+            return f'Session id = {shortest[0][:-1].decode()}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('51: Compression Ratio Side-Channel Attacks', p51)

@@ -1,93 +1,156 @@
-from binascii import hexlify, unhexlify
+from binascii import hexlify
 from os import urandom
+from typing import Set, Tuple
 
+from main import Solution
 from p39 import RSA
 
-
-def ceiling(a, b):
-    return (a / b) + (1 if a % b else 0)
+DEBUG = False
 
 
-def pkcs15(m, mod_bytes):
-    padlen = mod_bytes - 3 - len(m)
-    pad = '\x00\x02'
-
-    if padlen < 8:
-        raise ValueError("Not enough bytes for padding", 1.5)
-
-    pad += urandom(padlen)
-    pad += '\x00'
-    assert len(pad + m) == mod_bytes
-    return pad + m
+def debug_print(s: str):
+    if DEBUG:
+        print(s)
 
 
-def pkcs15_padding_oracle(c, rsa):
-    m = hex(rsa.dec(c))[2:-1]
-    m = m.zfill(ceiling(rsa.N.bit_length(), 4))
-    return m[:4] == '0002'
+def ceil(x: int, y: int) -> int:
+    return (x + y - 1) // y
 
 
-def validate_pkcs15(ptxt):
-    if ptxt[0] != '\x02':
-        raise ValueError('First bytes not 0x0002')
+def pad_pkcs15(msg: bytes, mod_len: int) -> bytes:
+    pad_len = mod_len - len(msg) - 3
 
+    if pad_len < 8:
+        raise ValueError(f'Padding of {pad_len} bytes is too short')
+
+    padding = urandom(pad_len)
+    padding.replace(b'\x00', b'\xac')  # no zero bytes in padding
+
+    padded = b'\x00\x02' + padding + b'\x00' + msg
+    assert len(padded) == mod_len
+    return padded
+
+
+def unpad_pkcs15(padded: bytes) -> bytes:
+    if not padded.startswith(b'\x00\x02'):
+        raise ValueError(f'Padding must start with 0x0002 (got {padded})')
+
+    padded = padded[2:]
+    zero_index = padded.index(0)
+
+    if zero_index < 8:
+        raise ValueError(f'Padding must be at least 8 bytes (got {zero_index} bytes)')
+
+    return padded[zero_index + 1:]
+
+
+def padding_oracle(ctxt: int, rsa: RSA) -> bool:
+    ptxt = rsa.dec(ctxt)
     try:
-        idx = ptxt[1:].index('\x00')
-    except IndexError:
-        raise ValueError('No 0x00 delimiter found!')
+        unpad_pkcs15(int.to_bytes(ptxt, rsa.bitsize // 8, byteorder='big'))
+        return True
+    except ValueError:
+        return False
 
-    return ptxt[2+idx:]
+
+def update_ctxt(c: int, s: int, rsa: RSA) -> int:
+    return (c * pow(s, rsa.e, rsa.N)) % rsa.N
 
 
-def p47():
-    rsa = RSA(bitsize=256)
-    m = pkcs15('kick it, CC', 256 / 8)
+def step2a(c: int, B: int, rsa: RSA) -> int:
+    debug_print('Entered step2a...')
+    s1 = ceil(rsa.N, (3*B))
+    while not padding_oracle(update_ctxt(c, s1, rsa), rsa):
+        s1 += 1
+    return s1
+
+
+def step2b(c: int, s: int, rsa: RSA) -> int:
+    debug_print('Entered step2b...')
+    si = s + 1
+    while not padding_oracle(update_ctxt(c, si, rsa), rsa):
+        si += 1
+    return si
+
+
+def step2c(c: int, s: int, a: int, b: int, B: int, rsa: RSA) -> int:
+    debug_print('Entered step2c...')
+    r = ceil(2 * (b*s - 2*B), rsa.N)
+    s = ceil((2*B + r*rsa.N), b)
+
+    while not padding_oracle(update_ctxt(c, s, rsa), rsa):
+        if s >= ((3*B + r*rsa.N) // a):
+            r += 1
+            s = ceil((2*B + r*rsa.N), b)
+        else:
+            s += 1
+
+    return s
+
+
+def step3(s: int, M: Set[Tuple[int, int]], B: int, n: int) -> Set[Tuple[int, int]]:
+    debug_print('Entered step3...')
+    newM = set()
+
+    for a, b in M:
+        r_min = ceil((a*s - 3*B + 1), n)
+        r_max = (b*s - 2*B) // n
+
+        for r in range(r_min, r_max + 1):
+            left = max(a, ceil((2*B + r*n), s))
+            right = min(b, (3*B - 1 + r*n) // s)
+            newM.add((left, right))
+
+    return newM
+
+
+def _solution_found(M: Set[Tuple[int, int]]) -> bool:
+    if len(M) != 1:
+        return False
+
+    a, b = next(iter(M))
+    return a == b
+
+
+def bb98(rsa: RSA) -> bytes:
+    m = pad_pkcs15(b'kick it, CC', rsa.bitsize // 8)
+    debug_print(f'Padded message is {hexlify(m)}, {len(m)} bytes long')
     m = int(hexlify(m), 16)
 
     c = rsa.enc(m)
-    B = 2 ** (256 - 16)
-    M = [2 * B, 3 * B-1]
+    B = 2 ** (rsa.bitsize - 16)
+    M = {(2*B, 3*B - 1)}
+    s = 1
     i = 1
 
-    def update_ctxt(s):
-        return (c * pow(s, rsa.e, rsa.N)) % rsa.N
-
-    while not M[0] == M[1]:
-        a, b = M[0], M[1]
+    while not _solution_found(M):
+        debug_print(f'Starting round with M {M}')
 
         if i == 1:
-            s = ceiling(rsa.N, 3*B)
-            c_ = update_ctxt(s)
-
-            while not pkcs15_padding_oracle(c_, rsa):
-                s += 1
-                c_ = update_ctxt(s)
-
+            s = step2a(c, B, rsa)
+        elif len(M) != 1:
+            s = step2b(c, s, rsa)
         else:
-            r = ceiling(2 * (b * s - 2 * B), rsa.N)
-            s = ceiling(2 * B + r * rsa.N, b)
-            c_ = update_ctxt(s)
+            a, b = next(iter(M))
+            s = step2c(c, s, a, b, B, rsa)
 
-            while not pkcs15_padding_oracle(c_, rsa):
-                if s >= (3 * B + r * rsa.N) / a:
-                    r += 1
-                    s = ceiling(2 * B + r * rsa.N, b)
+        debug_print(f'Found s for this round: {s}')
 
-                else:
-                    s += 1
-
-                c_ = update_ctxt(s)
-
-        r = ceiling((a * s - 3 * B + 1), rsa.N)
-        M[0] = max(a, ceiling(2 * B + r * rsa.N, s))
-        M[1] = min(b, (3 * B - 1 + r * rsa.N) / s)
+        M = step3(s, M, B, rsa.N)
         i += 1
 
-    hex_data = hex(M[0])[2:-1]
-    recovered = unhexlify(hex_data.zfill(len(hex_data) + (len(hex_data) % 2)))
-    return 'Recovered message "{}"'.format(validate_pkcs15(recovered))
+    a, _ = next(iter(M))
+
+    padded = int.to_bytes(a, length=rsa.bitsize // 8, byteorder='big')
+    debug_print(unpad_pkcs15(padded).decode())
+    return unpad_pkcs15(padded)
 
 
-def main():
-    from main import Solution
+def p47() -> str:
+    mod_size = 256
+    rsa = RSA(bitsize=mod_size)
+    return bb98(rsa).decode()
+
+
+def main() -> Solution:
     return Solution('47: Bleichenbacher\'s PKCS 1.5 Padding Oracle (Simple Case)', p47)

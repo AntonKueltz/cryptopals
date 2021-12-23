@@ -1,11 +1,12 @@
 from base64 import b64decode
 from binascii import hexlify, unhexlify
-from fractions import gcd as gcd_func
+from math import gcd as gcd_func
 
+from main import Solution
 from p39 import RSA
 
 
-def p46():
+def p46() -> str:
     rsa = RSA()
     m = b64decode(
         'VGhhdCdzIHdoeSBJIGZvdW5kIHlvdSBkb24ndCBwbGF5IGFyb3VuZCB3aXRoIHRoZSBG'
@@ -20,7 +21,7 @@ def p46():
         nm = bounds[0][0] * bounds[1][1] + bounds[1][0] * bounds[0][1]
         dm = bounds[0][1] * bounds[1][1] * 2
         gcd = gcd_func(nm, dm)
-        nm, dm = nm / gcd, dm / gcd
+        nm, dm = nm // gcd, dm // gcd
 
         c = (pow(2, rsa.e, rsa.N) * c) % rsa.N
 
@@ -29,10 +30,9 @@ def p46():
         else:
             bounds[0] = (nm, dm)
 
-    recovered = bounds[1][0] * rsa.N / bounds[1][1]
-    return 'Recovered message "{}"'.format(unhexlify(hex(recovered)[2:-1]))
+    recovered = bounds[1][0] * rsa.N // bounds[1][1]
+    return f'Recovered message "{unhexlify(hex(recovered)[2:]).decode()}"'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('46: RSA parity oracle', p46)

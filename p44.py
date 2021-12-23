@@ -1,12 +1,14 @@
 from hashlib import sha1
 from itertools import combinations
 from re import findall
+from typing import Collection, Optional
 
+from main import Solution
 from p39 import invmod
 from p43 import DSA
 
 
-def _parse_signature_file():
+def _parse_signature_file() -> Collection[str]:
     pattern = r'msg: [a-zA-Z.,\' ]+\n' \
               r's: ([0-9]+)\n' \
               r'r: ([0-9]+)\n' \
@@ -18,7 +20,7 @@ def _parse_signature_file():
     return findall(pattern, s)
 
 
-def p44():
+def p44() -> Optional[str]:
     dsa = DSA()
     y = int(
         '2d026f4bf30195ede3a088da85e398ef869611d0f68f07'
@@ -43,11 +45,10 @@ def p44():
         r = int(sigs[i][1])
         x = (((s1 * k) - m1) * invmod(r, dsa.q)) % dsa.q
 
-        if sha1(hex(x)[2:-1]).hexdigest() == fingerprint:
+        if sha1(hex(x)[2:].encode()).hexdigest() == fingerprint:
             assert y == pow(dsa.g, x, dsa.p)
-            return 'Private DSA key is {}'.format(x)
+            return f'Private DSA key is {x}'
 
 
-def main():
-    from main import Solution
+def main() -> Solution:
     return Solution('44: DSA nonce recovery from repeated nonce', p44)
