@@ -2,11 +2,11 @@
 Solutions for the [Matasano Crypto Challenges](http://cryptopals.com).
 
 ## usage
-This code is currently only python2.7 compatible. To run it install all dependencies
+This code is currently only python3.6+ compatible. To run it install all dependencies
 
 ```bash
 pip install -r requirements  # method 1
-pip install pycrypto requests web.py  # method 2
+pip install pycryptodome requests web.py  # method 2
 ```
 
 Then use `python main.py` to run individual problems, individual sets, or all problems
